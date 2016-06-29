@@ -1,7 +1,7 @@
 package org.atnos
 package origami
 package effect
-
+/*
 import java.io._
 
 import FoldId.Bytes
@@ -84,3 +84,4 @@ trait FoldIOFunctions {
   }
 }
 
+*/

@@ -2,7 +2,7 @@ package org.atnos
 package origami
 
 import FoldM._
-import FoldId._
+import Folds$._
 import FoldableM._
 import Arbitraries._
 import scalaz.{NonEmptyList, State, Id, \/}, Id._
@@ -74,16 +74,16 @@ object FoldIdSpec extends Properties("FoldId") {
   }
 
   def anyFold = forAll { list: List[Boolean] =>
-    FoldId.any[Boolean](identity _).run(list) ?= list.any(identity _)
+    Folds$.any[Boolean](identity _).run(list) ?= list.any(identity _)
   }
 
   def allFold = forAll { list: List[Boolean] =>
-    FoldId.all[Boolean](identity _).run(list) ?= list.all(identity _)
+    Folds$.all[Boolean](identity _).run(list) ?= list.all(identity _)
   }
 
   def anyBreakFold = forAll { list: List[Boolean] =>
     val iterator = list.toIterator
-    val anyTrue = FoldId.any[Boolean](identity _)
+    val anyTrue = Folds$.any[Boolean](identity _)
     anyTrue.runBreak(iterator)
 
     val fromTrue = list.dropWhile(_ == false).drop(1)
@@ -91,7 +91,7 @@ object FoldIdSpec extends Properties("FoldId") {
   }
 
   def allBreakFold = forAll { list: List[Boolean] =>
-    FoldId.all[Boolean](identity _).run(list) ?= list.all(identity _)
+    Folds$.all[Boolean](identity _).run(list) ?= list.all(identity _)
   }
 
   def firstFold = forAll { list: List[Int] =>
@@ -247,7 +247,7 @@ object FoldIdSpec extends Properties("FoldId") {
 
   def randomFold = forAll { list: List[Int] =>
     val randomElements =
-      randomInt[Int] compose FoldId.list
+      randomInt[Int] compose Folds$.list
 
     val result = FoldableIsFoldableM[Id, List, Int].foldM(list)(randomElements)
 

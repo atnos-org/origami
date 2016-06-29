@@ -10,7 +10,7 @@ import org.scalacheck._, Gen._, Arbitrary._
 import FoldM._, FoldableM._
 import SafeT._
 import FoldIO._
-import FoldId._
+import Folds$._
 import FoldSafeT._
 import scalaz._, Scalaz._
 import scalaz.effect._

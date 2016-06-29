@@ -1,7 +1,7 @@
 package org.atnos
 package origami
 package effect
-
+/*
 import scalaz._, Scalaz._
 import FoldM._
 import scalaz.concurrent.Task
@@ -33,3 +33,4 @@ trait FoldSafeT {
 }
 
 object FoldSafeT extends FoldSafeT
+*/

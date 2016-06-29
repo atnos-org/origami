@@ -6,7 +6,7 @@ import org.scalacheck.Prop._
 import org.scalacheck._
 import FoldM._
 import FoldableM._
-import FoldId._
+import Folds$._
 import Arbitraries._
 import scalaz.{Apply, Cobind, Compose, Id, Reducer, Monoid, \/-, -\/}, Id._
 import scalaz.std.list._
@@ -49,7 +49,7 @@ object FoldMSpec extends Properties("FoldM") {
   }
 
   def compose = forAll { (list: List[Int], fold: F[Int, Int]) =>    
-    val scans: F[Int, List[Int]] = fold compose FoldId.list
+    val scans: F[Int, List[Int]] = fold compose Folds$.list
 
     // scans is *not* equivalent to a scanLeft because it leaves out the start element
     scans.run(list.iterator) == list.scanLeft(fold.start)(fold.fold).drop(1).traverseU(fold.end)

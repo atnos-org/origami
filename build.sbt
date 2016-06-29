@@ -1,23 +1,28 @@
 import com.typesafe.sbt.SbtSite.SiteKeys._
 import com.typesafe.sbt.SbtGhPages.GhPagesKeys._
 import ReleaseTransformations._
-import com.ambiata.promulgate.project.ProjectPlugin.promulgate
+import com.ambiata.promulgate.version.VersionPlugin._
+import com.ambiata.promulgate.info.BuildInfoPlugin._
+import com.ambiata.promulgate.source.GenSourcePlugin._
 import Defaults.{defaultTestTasks, testTaskOptions}
 import sbtrelease._
 
 lazy val origami = project.in(file("."))
-  .settings(moduleName := "origami")
+  .settings(moduleSettings)
   .settings(buildSettings)
   .settings(publishSettings)
-  .settings(promulgate.library("org.atnos", "origami-eff-cats"):_*)
-  .settings(commonSettings)
 
-lazy val buildSettings = Seq(
+lazy val moduleSettings = Seq(
   organization := "org.atnos",
-  scalaVersion := "2.11.8"
-)
+  name := "origami",
+  moduleName := "origami-eff-cats",
+  scalaVersion := "2.11.8",
+  version in ThisBuild := "1.0"
+) ++ promulgateVersionSettings ++
+  promulgateBuildInfoSettings ++ Seq(BuildInfoKeys.pkg := "org.atnos.origami") ++
+  promulgateSourceSettings
 
-def commonSettings = Seq(
+def buildSettings = Seq(
   scalacOptions ++= commonScalacOptions,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings")
 ) ++ warnUnusedImport ++ prompt

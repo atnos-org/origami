@@ -5,7 +5,7 @@ import java.io.File
 import java.util.UUID
 
 import FoldM._
-import FoldId._
+import Folds$._
 import FoldableM._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Prop, Gen, Arbitrary}, Prop._

@@ -2,7 +2,7 @@ package org.atnos
 package origami
 
 import effect._
-
+/*
 object Origami extends
   FoldMTypes with FoldMFunctions with FoldMImplicits with
   FoldableMFunctions with FoldableMImplicits with
@@ -10,3 +10,4 @@ object Origami extends
   FoldId with
   FoldIO with
   FoldSafeT
+*/

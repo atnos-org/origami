@@ -1,7 +1,7 @@
 package org.atnos
 package origami
 package effect
-
+/*
 import scalaz._, Scalaz._, effect._
 import scalaz.concurrent.Task
 import NonEmptyList._
@@ -154,3 +154,4 @@ object FinalizersException {
   def create(t: Throwable): FinalizersException =
     FinalizersException(NonEmptyList.nels(t))
 }
+*/
