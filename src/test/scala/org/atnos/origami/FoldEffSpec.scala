@@ -15,7 +15,7 @@ import scalaz.syntax.monad._
 import scalaz.syntax.traverse._
 import com.ambiata.disorder.NaturalIntSmall
 
-object FoldMSpec extends Properties("FoldM") {
+object FoldEffSpec extends Properties("FoldM") {
 
   property("Folding a Foldable") = foldable
   property("Folding an Iterator") = iterator
