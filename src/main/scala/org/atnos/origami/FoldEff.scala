@@ -2,13 +2,11 @@ package org.atnos
 package origami
 
 import java.security.MessageDigest
-
-import FoldEff._
 import org.atnos.eff.{Fold => _, _}
 import eff._
 import cats.{Apply, Foldable, Monoid}
 import cats.implicits._
-import FoldEff._
+import foldEff._
 
 /**
  * A FoldM is a "left fold" over a data structure with:
@@ -281,14 +279,14 @@ trait FoldEff[R, T, U] { self =>
 /**
  * Typeclass instances and creation methods for folds
  */
-object FoldEff extends FoldEffTypes with FoldEffFunctions //with FoldMImplicits
+object FoldEff extends FoldEffTypes with FoldEffFunctions
 
 trait FoldEffTypes {
   /** alias for a non-effectful Fold */
-  type Fold[T, U] = FoldEff[NoEffect, T, U]
+  type Fold[T, U] = FoldEff[NoFx, T, U]
 
   /** alias for a non-effectful Fold where the state type is U */
-  type FoldState[T, U] = FoldEff[NoEffect, T, U] { type S = U }
+  type FoldState[T, U] = FoldEff[NoFx, T, U] { type S = U }
 
   /** alias for a Fold sinking its last value */
   type SinkEff[R, T] = FoldEff[R, T, Unit]
@@ -314,190 +312,4 @@ trait FoldEffFunctions {
     def end(s: S) = s
   }
 
-  /*
-  /** @return a fold from a Monoid */
-  def fromMonoid[M : Monoid] =
-    fromMonoidMap[M, M](identity _)
-
-  /** @return a fold from a Reducer */
-  def fromReducer[T, S](reducer: Reducer[T, S]) =
-    fromFoldLeft(reducer.monoid.zero)((s: S, t: T) => reducer.cons(t, s))
-
-    /** @return a fold from running a State object */
-  def fromStateRun[Eff[R, _]: Monad, T, U, V](state: T => State[U, V])(init: U) = new FoldEff[R, T, (U, Option[V])] {
-    type S = (U, Option[V])
-    def start = Monad[M].point((init, None))
-    def fold = (s: S, t: T) => {
-      val (st, v) = s
-      val (newState, newV) = state(t).run(st)
-      (newState, Some(newV))
-    }
-    def end(s: S) = Monad[M].point(s)
-  }
-
-  /** @return a fold for the execution of a State object */
-  def fromStateExec[Eff[R, _]: Monad, T, U, V](state: T => State[U, V])(init: U) =
-    fromStateRun(state)(init)(Monad[M]).map(_._1)
-
-  /** @return a fold for the evaluation of a State object */
-  def fromStateEval[Eff[R, _]: Monad, T, U, V](state: T => State[U, V])(init: U) =
-    fromStateRun(state)(init)(Monad[M]).map(_._2)
-
-  /** @return a fold with just a start action */
-  def fromStart[Eff[R, _]: Monad, T, S1](action: Eff[R, S1]) = new FoldEff[R, T, S1] {
-    type S = S1
-    def start = action
-    def fold = (s: S, t: T) => s
-    def end(s: S) = Monad[M].point(s)
-  }
-
-  */
-
 }
-
-
-trait FoldMImplicits {
-  /**
-   * Typeclass instances
-   */
-
-  /*
-  /**
-   * Apply instance
-   *
-   * This means that we can write:
-   *
-   *   val mean: Fold[Int, Int] = (sum |@| count)(_ / _)
-   *
-   * An Apply instance is also a Functor instance so we can write:
-   *
-   *   val meanTimes2 = mean.map(_ * 2)
-   */
-  implicit def FoldMApply[Eff[R, _] : Apply, T]: Apply[FoldEff[R, T, ?]] = new Apply[FoldEff[R, T, ?]] {
-    type F[U] = FoldEff[R, T, U]
-
-    def map[A, B](fa: F[A])(f: A => B): FoldEff[R, T, B] =
-      fa map f
-
-    def ap[A, B](fa: => F[A])(f: => F[A => B]): F[B] =
-      map(fa zip f) { case (a, b) => b(a) }
-  }
-
-  /**
-   *  Profunctor instance
-   *
-   *  This is especially useful because we can "map" on the input element
-   *
-   *  val doubleSum = fromMonoid[Double] // sum all elements
-   *  val roundedDoubleSum = doubleSum.mapfst(_.round)
-   */
-  implicit def FoldMProfunctor[Eff[R, _] : Functor]: Profunctor[FoldEff[R, ?, ?]] = new Profunctor[FoldEff[R, ?, ?]] {
-    type =>:[T, U] = FoldEff[R, T, U]
-
-    /** Contramap on `A`. */
-    def mapfst[A, B, C](fab: (A =>: B))(f: C => A): (C =>: B) =
-      fab.contramap(f)
-
-    /** Functor map on `B`. */
-    def mapsnd[A, B, C](fab: (A =>: B))(f: B => C): (A =>: C) =
-      fab map f
-  }
-
-  /**
-   * A FoldM can be turned into a Category if M has a MonadPlus instance
-   */
-  def FoldMCategory[Eff[R, _] : MonadPlus]: Category[FoldEff[R, ?, ?]] = new Category[FoldEff[R, ?, ?]] {
-    type F[A,B] = FoldEff[R, A, B]
-
-    def id[A] = idEff[R, M, A]
-    def compose[A, B, C](f: F[B, C], g: F[A, B]): F[A, C] =
-      FoldMCompose[M].compose(f, g)
-  }
-
-  /** monoid to append sinks effects */
-  implicit def SinkMMonoid[Eff[R, _] : Monad, T]: Monoid[SinkEff[R, M, T]] = new Monoid[SinkEff[R, M, T]] {
-    def zero = unitSink
-
-    def append(a1: SinkEff[R, M, T], a2: => SinkEff[R, M, T]): SinkEff[R, M, T] =
-      (a1 zip a2).void
-  }
-
-  /** sink doing nothing */
-  def unitSink[Eff[R, _]: Monad, T] = new FoldEff[R, T, Unit] {
-    type S = Unit
-    def start = Monad[M].point(())
-    def fold = (s: S, t: T) => s
-    def end(s: S) = Monad[M].point(())
-  }
-
-  /** identity fold for a MonadPlus monad */
-  def idEff[R, Eff[R, _] : MonadPlus, A] = new FoldEff[R, A, A] {
-    type S = Eff[R, A]
-    def start: Eff[R, Eff[R, A]] = Monad[M].point(MonadPlus[M].empty[A])
-    def fold = (s: S, a: A) => Monad[M].point(a)
-    def end(a: Eff[R, A]) = a
-  }
-
-  /**
-   * A FoldM can be turned into a Compose if M has a Monad instance
-   *
-   * This allows us to write:
-   *
-   * val scans = sum compose list
-   *
-   */
-  implicit def FoldMCompose[Eff[R, _] : Monad]: Compose[FoldEff[R, ?, ?]] = new Compose[FoldEff[R, ?, ?]] {
-    type F[A,B] = FoldEff[R, A, B]
-
-    def compose[A, B, C](f: F[B, C], g: F[A, B]): F[A, C] =
-      g compose f
-  }
-
-  /**
-   * Cobind instance
-   */
-  def FoldMCobind[Eff[R, _] : Monad, T]: Cobind[FoldEff[R, T, ?]] = new Cobind[FoldEff[R, T, ?]] {
-    type F[U] = FoldEff[R, T, U]
-
-    def cobind[A, B](fa: F[A])(f: F[A] => B): F[B] = new F[B] {
-      type S = fa.S
-      def start = fa.start
-      def fold = fa.fold
-      def end(s: S) = Monad[M].point(f(fa))
-    }
-
-    def map[A, B](fa: F[A])(f: A => B): FoldEff[R, T, B] =
-      fa map f
-  }
-
-  /**
-   * Comonad instance for Fold
-   */
-  implicit def FoldComonad[T]: Comonad[Fold[T, ?]] = new Comonad[Fold[T, ?]] {
-    type F[U] = Fold[T, U]
-
-    def copoint[A](fa: F[A]): A = fa.end(fa.start)
-
-    def cobind[A, B](fa: F[A])(f: F[A] => B): F[B] = new F[B] {
-      type S = fa.S
-      def start = fa.start
-      def fold = fa.fold
-      def end(s: S) = f(fa)
-    }
-
-    def map[A, B](fa: F[A])(f: A => B): Fold[T, B] =
-      fa map f
-  }
-
-  /** Natural transformation from Id to a monad M */
-  def IdMonadNaturalTransformation[Eff[R, _] : Monad]: Id ~> M = new (Id ~> M) {
-    def apply[A](i: Id[A]): Eff[R, A] = Monad[M].point(i)
-  }
-
-  /** Natural transformation from a List to an Iterator */
-  implicit val ListIteratorNaturalTransformation: List ~> Iterator = new (List ~> Iterator) {
-    def apply[A](i: List[A]): Iterator[A] = i.iterator
-  }
-*/
-}
-

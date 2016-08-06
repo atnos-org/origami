@@ -31,7 +31,7 @@ object FoldEffSpec extends Properties("FoldEff") {
 //  property("stop iteration early") = breakProp
 
   def foldable = forAll { list: List[Int] =>
-    Folds.list[NoEffect, Int].run(list).run === list
+    Folds.list[NoFx, Int].run(list).run === list
   }
 
   /*
