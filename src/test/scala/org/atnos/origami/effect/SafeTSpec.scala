@@ -1,7 +1,7 @@
 package org.atnos
 package origami
 package effect
-
+/*
 import org.scalacheck._, Gen._, Arbitrary._, Prop._
 import scala.io.Codec
 import scalaz._, Scalaz._
@@ -117,3 +117,4 @@ object SafeTSpec extends Properties("SafeTSpec") {
 case class TestFinalizer(var called: Boolean = false) extends Finalizer[Task] {
   def run: Task[Unit] = Task.delay { called = true; () }
 }
+*/

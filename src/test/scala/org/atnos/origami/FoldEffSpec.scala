@@ -4,39 +4,37 @@ package origami
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Prop._
 import org.scalacheck._
-import FoldM._
-import FoldableM._
-import Folds$._
+import FoldEff._
+import Folds._
 import Arbitraries._
-import scalaz.{Apply, Cobind, Compose, Id, Reducer, Monoid, \/-, -\/}, Id._
-import scalaz.std.list._
-import scalaz.std.anyVal._
-import scalaz.syntax.monad._
-import scalaz.syntax.traverse._
-import com.ambiata.disorder.NaturalIntSmall
+import cats._
+import org.atnos.eff._
+import org.atnos.eff.syntax.eff._
+import cats.implicits._
 
-object FoldEffSpec extends Properties("FoldM") {
+object FoldEffSpec extends Properties("FoldEff") {
 
   property("Folding a Foldable") = foldable
-  property("Folding an Iterator") = iterator
+//  property("Folding an Iterator") = iterator
+//
+//  property("Zip folds") = zip
+//  property("Compose folds") = compose
+//
+//  property("Apply laws") = applyLaws
+//  property("Compose laws") = composeLaws
+//  property("Cobind laws") = cobindLaws
+//
+//  property("from fold left") = fromFoldLeftProp
+//  property("from Monoid map") = fromMonoidMapProp
+//  property("from Reducer") = fromReducerProp
+//
+//  property("stop iteration early") = breakProp
 
-  property("Zip folds") = zip
-  property("Compose folds") = compose
-
-  property("Apply laws") = applyLaws
-  property("Compose laws") = composeLaws
-  property("Cobind laws") = cobindLaws
-
-  property("from fold left") = fromFoldLeftProp
-  property("from Monoid map") = fromMonoidMapProp
-  property("from Reducer") = fromReducerProp
-
-  property("stop iteration early") = breakProp
-
-  def foldable = forAll { (list: List[Int], fold: F[Int, String]) =>
-    fold.run(list) == runFoldOnList(list, fold)
+  def foldable = forAll { list: List[Int] =>
+    Folds.list[NoEffect, Int].run(list).run === list
   }
 
+  /*
   def iterator = forAll { (list: List[Int], fold: F[Int, String]) =>
     fold.run(list.iterator) == runFoldOnList(list, fold)
   }
@@ -115,5 +113,5 @@ object FoldEffSpec extends Properties("FoldM") {
     fold.start.flatMap { i: fold.S =>
       list.scanLeft(i: fold.S)((res, cur) => fold.fold(res, cur)).traverseU(fold.end)
     }
-
+*/
 }

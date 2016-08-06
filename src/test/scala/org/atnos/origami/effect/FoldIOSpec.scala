@@ -1,7 +1,7 @@
 package org.atnos
 package origami
 package effect
-
+/*
 import java.io._
 import java.util.UUID
 
@@ -138,3 +138,4 @@ object FoldIOSpec extends Properties("FoldIO") {
     IO(io.Source.fromFile(f)(Codec.UTF8).getLines)
 
 }
+*/

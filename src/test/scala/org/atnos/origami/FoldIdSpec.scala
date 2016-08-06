@@ -1,6 +1,6 @@
 package org.atnos
 package origami
-
+/*
 import FoldM._
 import Folds$._
 import FoldableM._
@@ -293,3 +293,4 @@ object FoldIdSpec extends Properties("FoldId") {
     Arbitrary(Gen.choose(-1, 10).map(SmallInt))
 
 }
+*/

@@ -1,4 +1,4 @@
-lazy val effcatsVersion = "1.7.2"
+lazy val effcatsVersion = "1.7.4"
 lazy val specs2Version  = "3.8.4"
 
 libraryDependencies := effcats ++ specs2

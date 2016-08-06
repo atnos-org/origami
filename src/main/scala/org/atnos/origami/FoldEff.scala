@@ -2,9 +2,11 @@ package org.atnos
 package origami
 
 import java.security.MessageDigest
+
 import FoldEff._
-import org.atnos.eff.{Fold =>_,_}, eff._
-import cats.{Monoid, Apply}
+import org.atnos.eff.{Fold => _, _}
+import eff._
+import cats.{Apply, Foldable, Monoid}
 import cats.implicits._
 import FoldEff._
 
@@ -155,6 +157,20 @@ trait FoldEff[R, T, U] { self =>
   def <+*(sink: SinkEff[R, S]) =
     observeNextState(sink)
 
+  /**
+   * run a FoldEff with a Foldable instance
+   */
+  def run[F[_] : Foldable](foldable: F[T]): Eff[R, U] =
+    start.flatMap { s =>
+      end(foldable.foldLeft(s)((res, cur) => fold(res, cur)))
+    }
+
+  /**
+   * run over one element
+   */
+  def run1(t: T): Eff[R, U] =
+    start.flatMap(s => end(fold(s, t)))
+
   /*
 
 
@@ -232,22 +248,12 @@ trait FoldEff[R, T, U] { self =>
 
     /**
      * run a FoldM with a FoldableM instance (like a List, an Iterator, a scalaz Process)
-     */
-     def run[F](ft: F)(implicit foldableM: FoldableEff[R, M, F, T]): Eff[R, U] =
-       foldableM.foldM(ft)(this)
-
-    /**
-     * run a FoldM with a FoldableM instance (like a List, an Iterator, a scalaz Process)
      * and break early if possible
      */
     def runBreak[F, V](ft: F)(implicit foldableM: FoldableEff[R, M, F, T], ev: S <:< (V \/ V)): Eff[R, U] =
       foldableM.foldMBreak(ft)(self.asInstanceOf[FoldEff[R, T, U] { type S = V \/ V }])
   */
-  /**
-   * run over one element
-   */
-  def run1(t: T): Eff[R, U] =
-    start.flatMap(s => end(fold(s, t)))
+
 /*
   /**
    * use a natural transformation to go from context M to context N

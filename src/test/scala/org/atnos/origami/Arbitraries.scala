@@ -1,23 +1,17 @@
 package org.atnos
 package origami
 
-import java.io.File
-import java.util.UUID
-
-import FoldM._
-import Folds$._
-import FoldableM._
+import FoldEff._
+import Folds._
 import org.scalacheck.Arbitrary._
-import org.scalacheck.{Prop, Gen, Arbitrary}, Prop._
-
-import scalaz.Id._
-import scalaz.effect.IO
-import scalaz.std.list._
-import scalaz.{Equal, NonEmptyList}
+import org.scalacheck.{Arbitrary, Gen, Prop}
+import Prop._
+import org.atnos.eff.NoEffect
+import cats._
 
 object Arbitraries {
-
-  type F[A, B] = FoldM[Id, A, B]
+/*
+  type F[A, B] = FoldEff[NoEffect, A, B]
   type FInt[A] = F[Int, A]
 
   implicit def FoldIntStringArbitrary: Arbitrary[F[Int, String]] =
@@ -42,22 +36,6 @@ object Arbitraries {
     }
   }
 
-  implicit def FoldBytesStringArbitraryWithState: Arbitrary[F[Bytes, String] { type S = Int }] = Arbitrary {
-    for {
-      init <- arbitrary[String]
-      fd   <- Gen.oneOf((s: Int, bs: Bytes) => s + bs._2, (s: Int, bs: Bytes) => s * bs._2)
-      last <- Gen.oneOf((s: Int) => s.toString, (s: Int) => (s*2).toString)
-    } yield new F[Bytes, String] {
-      type S = Int
-
-      def start       = init.getBytes("UTF-8").length
-      def fold        = fd
-      def end(s: Int) = last(s)
-
-      override def toString = "bytes fold"
-    }
-  }
-
   implicit def FoldStringStringArbitraryWithState: Arbitrary[F[String, String] { type S = Int }] = Arbitrary {
     for {
       init <- arbitrary[Int]
@@ -70,7 +48,7 @@ object Arbitraries {
       def fold        = fd
       def end(s: Int) = last(s)
 
-      override def toString = "bytes fold"
+      override def toString = "string fold"
     }
   }
 
@@ -150,92 +128,25 @@ object Arbitraries {
     }
   }
 
-  implicit def NonEmptyListArbitrary[T : Arbitrary]: Arbitrary[NonEmptyList[T]] =
-    Arbitrary {
-      for {
-        t  <- arbitrary[T]
-        ls <- arbitrary[List[T]]
-      } yield NonEmptyList(t, ls:_*)
-    }
-
-  implicit def IntFoldEqual[U]: Equal[F[Int, U]] = new Equal[F[Int, U]] {
-    def equal(a1: F[Int, U], a2: F[Int, U]): Boolean = {
+  implicit def IntFoldEq[U]: Eq[F[Int, U]] = new Eq[F[Int, U]] {
+    def eq(a1: F[Int, U], a2: F[Int, U]): Boolean = {
       (a1.run((1 to 3).toList) == a2.run((1 to 3).toList)) &&
         (a1.run(List[Int]()) == a2.run(List[Int]()))
     }
   }
 
-  implicit def StringFoldEqual[U]: Equal[F[String, U]] = new Equal[F[String, U]] {
-    def equal(a1: F[String, U], a2: F[String, U]): Boolean =
+  implicit def StringFoldEq[U]: Eq[F[String, U]] = new Eq[F[String, U]] {
+    def eq(a1: F[String, U], a2: F[String, U]): Boolean =
       (a1.run((1 to 10).toList.map(_.toString)) == a2.run((1 to 10).toList.map(_.toString))) &&
         (a1.run(List[String]()) == a2.run(List[String]()))
   }
 
-  implicit def EqualString: Equal[String] =
-    Equal.equalA[String]
+  implicit def EqString: Eq[String] =
+    Eq.equalA[String]
 
   implicit class approxEqual(d1: Double) {
     def ==~(d2: Double) = math.abs(d1 - d2) <= 0.001
   }
-
-  /**
-   * FILES
-   */
-  case class Line(value: String)
-
-  implicit def ArbitraryLine: Arbitrary[Line] =
-    Arbitrary(arbitrary[String].filter(l => !Seq("\n", "\r").exists(l.contains)).map(Line.apply))
-
-  def withTempFile(action: File => IO[Prop]) = {
-    val file = createTempFile
-    file.createNewFile
-    try action(file).unsafePerformIO
-    finally file.delete
-  }
-
-  def withTempFiles2(action: (File, File) => IO[Prop]) = {
-    val (file1, file2) = (createTempFile(s"file1-"), createTempFile(s"file2-"))
-    try action(file1, file2).unsafePerformIO
-    finally { try file1.delete finally file2.delete }
-  }
-
-  def withTempDir(action: File => IO[Prop]) = {
-    val dir = createTempDir
-    try action(dir).unsafePerformIO
-    finally deleteDir(dir)
-  }
-
-  def createTempFile: File =
-    createTempFile("")
-
-  def createTempFile(prefix: String): File = {
-    val uuid = UUID.randomUUID
-    val fileName = "target/test-foldmspec/"+prefix+uuid.toString
-    val tmpFile = new File(fileName)
-    if (!tmpFile.getParentFile.exists) tmpFile.getParentFile.mkdirs
-    if (tmpFile.exists) tmpFile.delete
-    tmpFile
-  }
-
-  def createTempDir: File =
-    createTempDir("")
-
-  def createTempDir(prefix: String): File = {
-    val uuid = UUID.randomUUID
-    val dirName = "target/test-foldmspec/"+prefix+uuid.toString
-    val tmpDir = new File(dirName)
-    if (tmpDir.exists) deleteDir(tmpDir)
-    tmpDir
-  }
-
-  def deleteDir(dir: File): Unit = {
-    val files = dir.listFiles
-    Option(files).fold(dir.delete: Unit)(fs => deletePaths(fs.toList))
-  }
-
-  def deletePaths(paths: List[File]): Unit = {
-    val (dirs, files) = paths.partition(_.isDirectory)
-    files.foreach(_.delete)
-    dirs.foreach(deleteDir)
-  }
+  */
 }
+
