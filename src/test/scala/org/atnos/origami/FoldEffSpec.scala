@@ -4,15 +4,15 @@ package origami
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Prop._
 import org.scalacheck._
-import FoldEff._
-import Folds._
+import Fold._
+import FoldId._
 import Arbitraries._
 import cats._
 import org.atnos.eff._
 import org.atnos.eff.syntax.eff._
 import cats.implicits._
 
-object FoldEffSpec extends Properties("FoldEff") {
+object FoldSpec extends Properties("Fold") {
 
   property("Folding a Foldable") = foldable
 //  property("Folding an Iterator") = iterator
@@ -31,7 +31,7 @@ object FoldEffSpec extends Properties("FoldEff") {
 //  property("stop iteration early") = breakProp
 
   def foldable = forAll { list: List[Int] =>
-    Folds.list[NoFx, Int].run(list).run === list
+    FoldId.list[NoFx, Int].run(list).run === list
   }
 
   /*
