@@ -4,9 +4,9 @@ package origami
 import org.atnos.eff.{Fold => _, _}
 import eff._
 import org.atnos.eff.syntax.eff._
-import cats.{Apply, Foldable, Monoid}
+import cats._, data._
 import cats.implicits._
-import foldEff._
+import fold._
 
 /**
  * A Fold is a "left fold" over a data structure with:
@@ -166,6 +166,15 @@ trait Fold[R, A, B] { self =>
     }
   }
 
+  /** create a fold that will run this fold repeatedly on input elements and collect all results */
+  def nest[F[_], C](f: C => F[A])(implicit monoid: Monoid[B], foldable: Foldable[F]) = new Fold[R, C, B] {
+    type S = Eff[R, B]
+    def start = pure(pure(monoid.empty))
+    def fold = (s: S, c: C) =>
+      self.run(f(c)).flatMap((b: B) => s.map(s1 => monoid.combine(s1, b)))
+
+    def end(s: S) = s
+  }
 
   /**
    * use a transformation to go from effect stack to another
@@ -226,4 +235,31 @@ trait FoldFunctions {
     def end(s: S) = pure(s)
   }
 
+  /** @return a fold from running a State object */
+  def fromStateRun[R, A, B, C](state: A => State[B, C])(init: B) = new Fold[R, A, (B, Option[C])] {
+    type S = (B, Option[C])
+    def start = pure((init, None))
+    def fold = (s: S, a: A) => {
+      val (sa, c) = s
+      val (newState, newC) = state(a).run(sa).value
+      (newState, Some(newC))
+    }
+    def end(s: S) = pure(s)
+  }
+
+  /** @return a fold for the execution of a State object */
+  def fromStateExec[R, A, B, C](state: A => State[B, C])(init: B) =
+    fromStateRun(state)(init).map(_._1)
+
+  /** @return a fold for the evaluation of a State object */
+  def fromStateEval[R, A, B, C](state: A => State[B, C])(init: B) =
+    fromStateRun(state)(init).map(_._2)
+
+  /** @return a fold with just a start action */
+  def fromStart[R, A, S1](action: Eff[R, S1]) = new Fold[R, A, S1] {
+    type S = S1
+    def start = action
+    def fold = (s: S, a: A) => s
+    def end(s: S) = pure(s)
+  }
 }

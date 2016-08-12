@@ -8,23 +8,33 @@ import Defaults.{defaultTestTasks, testTaskOptions}
 import sbtrelease._
 
 lazy val origami = project.in(file("."))
-  .settings(moduleSettings)
   .settings(buildSettings)
   .settings(publishSettings)
+  .aggregate(core, lib)
 
-lazy val moduleSettings = Seq(
+lazy val core = project.in(file("core"))
+  .settings(moduleSettings("core"))
+  .settings(buildSettings)
+
+lazy val lib = project.in(file("lib"))
+  .settings(moduleSettings("lib"))
+  .settings(buildSettings)
+  .dependsOn(core)
+
+def moduleSettings(moduleName: String) = Seq(
   organization := "org.atnos",
-  name := "origami",
-  moduleName := "origami-eff-cats",
-  scalaVersion := "2.11.8",
-  version in ThisBuild := "1.0"
+  name := "origami-"+moduleName,
+  version in ThisBuild := "2.0.0"
 ) ++ promulgateVersionSettings ++
-  promulgateBuildInfoSettings ++ Seq(BuildInfoKeys.pkg := "org.atnos.origami") ++
+  promulgateBuildInfoSettings ++ Seq(BuildInfoKeys.pkg := "org.atnos.origami."+moduleName) ++
   promulgateSourceSettings
 
 def buildSettings = Seq(
+  scalaVersion := "2.11.8",
   scalacOptions ++= commonScalacOptions,
-  scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings")
+  scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1"),
+  addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
 ) ++ warnUnusedImport ++ prompt
 
 lazy val tagName = Def.setting{
