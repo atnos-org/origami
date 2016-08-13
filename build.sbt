@@ -14,11 +14,13 @@ lazy val origami = project.in(file("."))
 
 lazy val core = project.in(file("core"))
   .settings(moduleSettings("core"))
+  .settings(publishSettings)
   .settings(buildSettings)
 
 lazy val lib = project.in(file("lib"))
   .settings(moduleSettings("lib"))
   .settings(buildSettings)
+  .settings(publishSettings)
   .dependsOn(core, core % "test->test")
 
 def moduleSettings(moduleName: String) = Seq(
@@ -43,11 +45,11 @@ lazy val tagName = Def.setting{
 
 lazy val publishSettings =
   Seq(
-  homepage := Some(url("https://github.com/atnos-org/origami-eff-cats")),
+  homepage := Some(url("https://github.com/atnos-org/origami")),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
-  scmInfo := Some(ScmInfo(url("https://github.com/atnos-org/yielded"), "scm:git:git@github.com:atnos-org/origami-eff-cats.git")),
+  scmInfo := Some(ScmInfo(url("https://github.com/atnos-org/origami"), "scm:git:git@github.com:atnos-org/origami.git")),
   autoAPIMappings := true,
-  apiURL := Some(url("http://atnos.org/origami-eff-cats/api/")),
+  apiURL := Some(url("http://atnos.org/origami/api/")),
   pomExtra := (
     <developers>
       <developer>
@@ -91,7 +93,7 @@ lazy val userGuideSettings =
     GhPagesKeys.ghpagesNoJekyll := false,
     SiteKeys.siteSourceDirectory in SiteKeys.makeSite := target.value / "specs2-reports" / "site",
     includeFilter in SiteKeys.makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js",
-    git.remoteRepo := "git@github.com:atnos-org/origami-eff-cats.git"
+    git.remoteRepo := "git@github.com:atnos-org/origami.git"
   )
 
 lazy val sharedReleaseProcess = Seq(
