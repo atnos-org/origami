@@ -1,6 +1,6 @@
 package org.atnos.origami
 
-import Fold._
+import fold._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen, Prop}
 import Prop._

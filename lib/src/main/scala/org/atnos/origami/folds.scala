@@ -1,16 +1,15 @@
-package org.atnos
-package origami
+package org.atnos.origami
 
 import cats._, data._
 import cats.implicits._
-import Fold._
-import org.atnos.eff.{Fold =>_,_}, eff._
+import org.atnos.origami.fold._
+import org.atnos.eff._, eff._
 
 /**
  * List of predefined Folds
  */
 
-object FoldId {
+object folds {
 
   /** @return fold to count elements */
   def count[A]: FoldState[A, Int] =

@@ -4,7 +4,7 @@ package origami
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Prop._
 import org.scalacheck._
-import Fold._
+import fold._
 import cats._
 import org.atnos.eff._
 import org.atnos.eff.syntax.eff._
@@ -56,6 +56,6 @@ object FoldSpec extends Properties("Fold") {
    * HELPERS
    */
 
-  def listFold = Fold.fromFoldLeft[NoFx, Int, List[Int]](List[Int]())(_ :+ _)
+  def listFold = fromFoldLeft[NoFx, Int, List[Int]](List[Int]())(_ :+ _)
 
 }

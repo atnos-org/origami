@@ -1,8 +1,7 @@
 package org.atnos
 package origami
 
-import org.atnos.eff.{Fold => _, _}
-import eff._
+import org.atnos.eff._, eff._
 import org.atnos.eff.syntax.eff._
 import cats._, data._
 import cats.implicits._
@@ -197,26 +196,8 @@ trait Fold[R, A, B] { self =>
 }
 
 /**
- * Aypeclass instances and creation methods for folds
+ * Typeclass instances and creation methods for folds
  */
-object Fold extends FoldTypes with FoldFunctions
-
-trait FoldTypes {
-  /** alias for a non-effectful Fold */
-  type FoldId[A, U] = Fold[NoFx, A, U]
-
-  /** alias for a non-effectful Fold where the state type is U */
-  type FoldState[A, B] = Fold[NoFx, A, B] { type S = B }
-
-  /** alias for a Fold sinking its last value */
-  type Sink[R, A] = Fold[R, A, Unit]
-
-  /** alias for a Fold exposing it state type */
-  type Aux[R, A, B, S1] = Fold[R, A, B] { type S = S1 }
-}
-
-object FoldTypes extends FoldTypes
-
 trait FoldFunctions {
 
   /** @return a fold which uses a Monoid to accumulate elements */
@@ -248,11 +229,11 @@ trait FoldFunctions {
   }
 
   /** @return a fold for the execution of a State object */
-  def fromStateExec[R, A, B, C](state: A => State[B, C])(init: B) =
+  def fromStateExec[R, A, B, C](state: A => State[B, C])(init: B): Fold[R, A, B] =
     fromStateRun(state)(init).map(_._1)
 
   /** @return a fold for the evaluation of a State object */
-  def fromStateEval[R, A, B, C](state: A => State[B, C])(init: B) =
+  def fromStateEval[R, A, B, C](state: A => State[B, C])(init: B): Fold[R, A, Option[C]] =
     fromStateRun(state)(init).map(_._2)
 
   /** @return a fold with just a start action */

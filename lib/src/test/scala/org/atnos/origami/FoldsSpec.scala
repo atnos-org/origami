@@ -1,15 +1,15 @@
-package org.atnos
-package origami
+package org.atnos.origami
 
-import Fold._
-import FoldId._
+import fold._
+import folds._
 import cats._, data._
 import cats.implicits._
 import org.atnos.eff._, eff._
 import org.atnos.eff.syntax.eff._
 import org.scalacheck._, Prop._, Arbitrary._
+import Arbitraries._
 
-object FoldIdSpec extends Properties("FoldId") {
+object FoldsSpec extends Properties("Folds") {
 
   property("count") = countFold
   property("countOf") = countOfFold
@@ -57,11 +57,11 @@ object FoldIdSpec extends Properties("FoldId") {
   }
 
   def anyFold = forAll { list: List[Boolean] =>
-    FoldId.any[Boolean](identity _).run(list).run ?= list.exists(identity _)
+    folds.any[Boolean](identity _).run(list).run ?= list.exists(identity _)
   }
 
   def allFold = forAll { list: List[Boolean] =>
-    FoldId.all[Boolean](identity _).run(list).run ?= list.forall(identity _)
+    folds.all[Boolean](identity _).run(list).run ?= list.forall(identity _)
   }
 
   def firstFold = forAll { list: List[Int] =>
@@ -143,9 +143,9 @@ object FoldIdSpec extends Properties("FoldId") {
       if (count == 1) 0
       else            (list.map(x => x * x).sum - (list.sum * list.sum) / count) / count
 
-    val (c, m, v) = onlineVariance[Double].run(list)
+    val (c, m, v) = onlineVariance[Double].run(list).run
 
-    (c ==~ count)    :| "count" &&
+    (c == count)     :| "count" &&
     (m ==~ mean)     :| "mean"  &&
     (v ==~ variance) :| "variance"
   }
@@ -176,18 +176,18 @@ object FoldIdSpec extends Properties("FoldId") {
   }
 
   def stateFold = forAll { list: List[Int] =>
-    val fold: FoldId[Int, Option[Int]] = fromStateEval((i: Int) => State[Int, Int] { count: Int =>
+    val stateFold: FoldId[Int, Option[Int]] = fold.fromStateEval((i: Int) => State[Int, Int] { count: Int =>
       val above10 = i >= 10
       val newCount = if (above10) count + 1 else count
       (newCount, newCount)
     })(0)
 
-    fold.run(list).run.getOrElse(0) ?= list.count(_ > 10)
+    stateFold.run(list).run.getOrElse(0) ?= list.count(_ > 10)
   }
 
   def randomFold = forAll { list: List[Int] =>
     val randomElements =
-      randomInt[Int] compose FoldId.list
+      randomInt[Int] compose folds.list
 
     val result = randomElements.run(list).run
 

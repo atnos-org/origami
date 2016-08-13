@@ -19,7 +19,7 @@ lazy val core = project.in(file("core"))
 lazy val lib = project.in(file("lib"))
   .settings(moduleSettings("lib"))
   .settings(buildSettings)
-  .dependsOn(core)
+  .dependsOn(core, core % "test->test")
 
 def moduleSettings(moduleName: String) = Seq(
   organization := "org.atnos",
