@@ -3,7 +3,7 @@ package origami
 
 import org.atnos.eff._, eff._
 import org.atnos.eff.syntax.eff._
-import cats._, data._
+import cats._, data._, functor._, arrow._
 import cats.implicits._
 import fold._
 
@@ -221,6 +221,74 @@ object Fold {
     }
   }
 
+  /**
+   * Apply instance
+   *
+   * This means that we can write:
+   *
+   *   val mean: Fold[Int, Int] = (sum |@| count)(_ / _)
+   *
+   * An Apply instance is also a Functor instance so we can write:
+   *
+   *   val meanTimes2 = mean.map(_ * 2)
+   */
+  implicit def ApplyFold[R, T]: Apply[Fold[R, T, ?]] = new Apply[Fold[R, T, ?]] {
+    type F[U] = Fold[R, T, U]
+
+    def map[A, B](fa: F[A])(f: A => B): F[B] =
+      fa map f
+
+    def ap[A, B](f: F[A => B])(fa: F[A]): F[B] =
+      map(fa zip f) { case (a, b) => b(a) }
+  }
+
+  /**
+   *  Profunctor instance
+   *
+   *  This is especially useful because we can "map" on the input element
+   *
+   *  val doubleSum = fromMonoid[Double] // sum all elements
+   *  val roundedDoubleSum = doubleSum.mapfst(_.round)
+   */
+  implicit def ProfunctorFold[R]: Profunctor[Fold[R, ?, ?]] = new Profunctor[Fold[R, ?, ?]] {
+    type =>:[A, B] = Fold[R, A, B]
+
+    def dimap[A, B, C, D](fab: A =>: B)(f: C => A)(g: B => D): C =>: D =
+      fab.contramap(f).map(g)
+
+  }
+
+  /**
+   * A Fold can be turned into a Compose
+   *
+   * This allows us to write:
+   *
+   * val scans = sum compose list
+   *
+   */
+  implicit def ComposeFold[R]: Compose[Fold[R, ?, ?]] = new Compose[Fold[R, ?, ?]] {
+    type F[A, B] = Fold[R, A, B]
+
+    def compose[A, B, C](f: F[B, C], g: F[A, B]): F[A, C] =
+      g compose f
+  }
+
+  /**
+   * Cobind instance
+   */
+  def CoflatMapFold[R, T]: CoflatMap[Fold[R, T, ?]] = new CoflatMap[Fold[R, T, ?]] {
+    type F[U] = Fold[R, T, U]
+
+    def coflatMap[A, B](fa: F[A])(f: F[A] => B): F[B] = new Fold[R, T, B] {
+      type S = fa.S
+      def start = fa.start
+      def fold = fa.fold
+      def end(s: S) = pure(f(fa))
+    }
+
+    def map[A, B](fa: F[A])(f: A => B): F[B] =
+      fa map f
+  }
 }
 
 /**
