@@ -193,12 +193,40 @@ trait Fold[R, A, B] { self =>
   def void =
     as(())
 
+  def startWith(action: Eff[R, Unit]): Fold[R, A, B] = new Fold[R, A, B] {
+    type S = self.S
+    def start = action >> self.start
+    def fold = (s, a) => self.fold(s, a)
+    def end(s: S) = self.end(s)
+  }
+
+  def endWith(action: Eff[R, Unit]): Fold[R, A, B] = new Fold[R, A, B] {
+    type S = self.S
+    def start = self.start
+    def fold = (s, a) => self.fold(s, a)
+    def end(s: S) = self.end(s).flatMap(b => action.as(b))
+  }
+
+}
+
+object Fold {
+
+  implicit def MonoidSink[R, A]: Monoid[Fold[R, A, Unit]] = new Monoid[Fold[R, A, Unit]] {
+    def empty = Folds.fromStart(pure(()))
+    def combine(s1: Fold[R, A, Unit], s2: Fold[R, A, Unit]): Fold[R, A, Unit] = new Fold[R, A, Unit] {
+      type S = (s1.S, s2.S)
+      def start = s1.start.flatMap(s1s => s2.start.map(s2s => (s1s, s2s)))
+      def fold = (s: S, a: A) => (s1.fold(s._1, a), s2.fold(s._2, a))
+      def end(s: S) = s1.end(s._1) >> s2.end(s._2)
+    }
+  }
+
 }
 
 /**
  * Typeclass instances and creation methods for folds
  */
-trait FoldFunctions {
+trait Folds {
 
   /** @return a fold which uses a Monoid to accumulate elements */
   def fromMonoidMap[R, A, M : Monoid](f: A => M) = new Fold[R, A, M] {
@@ -244,3 +272,5 @@ trait FoldFunctions {
     def end(s: S) = pure(s)
   }
 }
+
+object Folds extends Folds
