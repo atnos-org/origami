@@ -79,12 +79,20 @@ trait Fold[R, A, B] { self =>
     def end(s: S) = Apply[Eff[R, ?]].tuple2(self.end(s._1), f.end(s._2))
   }
 
+  /** zip with another fold, running this one only for its side effects */
+  def *>[C](f: Fold[R, A, C]): Fold[R, A, C] =
+    zip(f).map(_._2)
+
+  /** alias for *> */
+  def observedBy[C](f: Fold[R, A, C]): Fold[R, A, C] =
+    zip(f).map(_._2)
+
   /** zip with another fold only for its side effects */
-  def <*(f: Sink[R, A]) =
+  def <*[C](f: Fold[R, A, C]) =
     zip(f).map(_._1)
 
   /** alias for <* */
-  def observe(f: Sink[R, A]) =
+  def observe[C](f: Fold[R, A, C]) =
     zip(f).map(_._1)
 
   /** observe both the input value and the current state */
