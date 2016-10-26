@@ -134,7 +134,7 @@ object Arbitraries {
       for {
         t  <- arbitrary[T]
         ls <- arbitrary[List[T]]
-      } yield NonEmptyList(t, ls:_*)
+      } yield NonEmptyList(t, ls)
     }
 
   implicit def IntFoldEqual[U]: Eq[FoldInt[U]] = new Eq[FoldInt[U]] {

@@ -4,7 +4,7 @@ import org.atnos.eff.NoFx
 
 package object origami {
 
-  object fold extends Folds
+  object fold extends FoldCreation
 
   /** alias for a non-effectful Fold */
   type FoldId[A, U] = Fold[NoFx, A, U]

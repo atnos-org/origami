@@ -8,4 +8,4 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
 
-script: sbt -scala-version $TRAVIS_SCALA_VERSION 'test-only'
+script: sbt -scala-version $TRAVIS_SCALA_VERSION 'testOnly -- xonly'

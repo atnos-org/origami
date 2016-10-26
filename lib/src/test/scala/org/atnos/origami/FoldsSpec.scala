@@ -1,6 +1,5 @@
 package org.atnos.origami
 
-import fold._
 import folds._
 import cats._, data._
 import cats.implicits._

@@ -1,11 +1,11 @@
 package org.atnos
 package origami
 
-import org.atnos.eff._, eff._
+import org.atnos.eff._, eff._, safe._
 import org.atnos.eff.syntax.eff._
 import cats._, data._, functor._, arrow._
 import cats.implicits._
-import fold._
+import FoldCreation._
 
 /**
  * A Fold is a "left fold" over a data structure with:
@@ -220,7 +220,7 @@ trait Fold[R, A, B] { self =>
 object Fold {
 
   implicit def MonoidSink[R, A]: Monoid[Fold[R, A, Unit]] = new Monoid[Fold[R, A, Unit]] {
-    def empty = Folds.fromStart(pure(()))
+    def empty = FoldCreation.fromStart(pure(()))
     def combine(s1: Fold[R, A, Unit], s2: Fold[R, A, Unit]): Fold[R, A, Unit] = new Fold[R, A, Unit] {
       type S = (s1.S, s2.S)
       def start = s1.start.flatMap(s1s => s2.start.map(s2s => (s1s, s2s)))
@@ -300,9 +300,9 @@ object Fold {
 }
 
 /**
- * Typeclass instances and creation methods for folds
+ * Creation methods for folds
  */
-trait Folds {
+trait FoldCreation {
 
   /** @return a fold which uses a Monoid to accumulate elements */
   def fromMonoidMap[R, A, M : Monoid](f: A => M) = new Fold[R, A, M] {
@@ -347,6 +347,25 @@ trait Folds {
     def fold = (s: S, a: A) => s
     def end(s: S) = pure(s)
   }
+
+  /**
+   * @return a fold with just an open action and a close action which is always executed even in case
+   *         of a failure during folding
+   */
+  def bracket[R :_Safe, A, C](open: Eff[R, C])(step: (C, A) => Eff[R, C])(close: C => Eff[R, Unit]): Fold[R, A, Unit] = new Fold[R, A, Unit] {
+    type S = Eff[R, C]
+    def start = pure(open)
+    def fold = (s: S, a: A) => otherwise(s.flatMap(c => step(c, a)), s.flatMap(close).flatMap(_ => s))
+    def end(s: S) = s.flatMap(close)
+  }
+
+  /** @return a fold sinking all the values to a unit action */
+  def fromSink[R, A](action: A => Eff[R, Unit]): Fold[R, A, Unit] = new Fold[R, A, Unit] {
+    type S = Eff[R, Unit]
+    def start = pure(pure(()))
+    def fold = (s: S, a: A) => s *> action(a)
+    def end(s: S) = s.void
+  }
 }
 
-object Folds extends Folds
+object FoldCreation extends FoldCreation
