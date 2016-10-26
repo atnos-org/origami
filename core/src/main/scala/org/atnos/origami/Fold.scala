@@ -96,15 +96,15 @@ trait Fold[R, A, B] { self =>
     zip(f).map(_._1)
 
   /** observe both the input value and the current state */
-  def observeWithState(sink: Sink[R, (S, A)]) = new Fold[R, A, B] {
+  def observeWithState(sink: Sink[R, (A, S)]) = new Fold[R, A, B] {
     type S = (self.S, sink.S)
     def start = Apply[Eff[R, ?]].tuple2(self.start , sink.start)
-    def fold = (s: S, a: A) => (self.fold(s._1, a), sink.fold(s._2, (s._1, a)))
+    def fold = (s: S, a: A) => (self.fold(s._1, a), sink.fold(s._2, (a, s._1)))
     def end(s: S) = Apply[Eff[R, ?]].tuple2(self.end(s._1), sink.end(s._2)).map(_._1)
   }
 
   /** alias for observeWithState */
-  def <<-*(sink: Sink[R, (S, A)]) =
+  def <<-*(sink: Sink[R, (A, S)]) =
     observeWithState(sink)
 
   /** observe the current state */
@@ -120,15 +120,15 @@ trait Fold[R, A, B] { self =>
     observeState(sink)
 
   /** observe both the input value and the next state */
-  def observeWithNextState(sink: Sink[R, (S, A)]) = new Fold[R, A, B] {
+  def observeWithNextState(sink: Sink[R, (A, S)]) = new Fold[R, A, B] {
     type S = (self.S, sink.S)
     def start = Apply[Eff[R, ?]].tuple2(self.start , sink.start)
-    def fold = (s: S, a: A) => { val next = self.fold(s._1, a); (next, sink.fold(s._2, (next, a))) }
+    def fold = (s: S, a: A) => { val next = self.fold(s._1, a); (next, sink.fold(s._2, (a, next))) }
     def end(s: S) = Apply[Eff[R, ?]].tuple2(self.end(s._1), sink.end(s._2)).map(_._1)
   }
 
   /** alias for observeWithNextState */
-  def <<+*(sink: Sink[R, (S, A)]) =
+  def <<+*(sink: Sink[R, (A, S)]) =
     observeWithNextState(sink)
 
   /** observe the next state */
