@@ -35,18 +35,18 @@ object folds {
     def end(s: S) = pure(s.size)
   }
 
-  /** @return return false if the list is empty or if all elements are false, use a Xor state to indicate early success */
+  /** @return return false if the list is empty or if all elements are false, use a Either state to indicate early success */
   def any[A](f: A => Boolean) = new Fold[NoFx, A, Boolean] {
-    type S = Boolean Xor Boolean
-    def start = pure(Xor.left(false))
-    def fold = (s: S, a: A) => if (f(a)) Xor.right(true) else s
+    type S = Boolean Either Boolean
+    def start = pure(Either.left(false))
+    def fold = (s: S, a: A) => if (f(a)) Either.right(true) else s
     def end(s: S) = pure(s.fold(b => b, b => b))
   }
-  /** @return return true if the list is empty or if all elements are true, use a Xor state to indicate early failure */
+  /** @return return true if the list is empty or if all elements are true, use a Either state to indicate early failure */
   def all[A](f: A => Boolean) = new Fold[NoFx, A, Boolean] {
-    type S = Boolean Xor Boolean
-    def start = pure(Xor.left(true))
-    def fold = (s: S, a: A) => if (!f(a)) Xor.right(false) else s
+    type S = Boolean Either Boolean
+    def start = pure(Either.left(true))
+    def fold = (s: S, a: A) => if (!f(a)) Either.right(false) else s
     def end(s: S) = pure(s.fold(b => b, b => b))
   }
 

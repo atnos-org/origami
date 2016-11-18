@@ -1,5 +1,5 @@
-lazy val effcatsVersion = "2.0.0-RC10"
-lazy val specs2Version  = "3.8.5"
+lazy val effcatsVersion = "2.0.0-RC27"
+lazy val specs2Version  = "3.8.6"
 
 resolvers ++= Seq(
     Resolver.sonatypeRepo("releases")
