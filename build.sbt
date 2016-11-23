@@ -26,7 +26,7 @@ lazy val lib = project.in(file("lib"))
 def moduleSettings(moduleName: String) = Seq(
   organization := "org.atnos",
   name := "origami-"+moduleName,
-  version in ThisBuild := "2.1.0"
+  version in ThisBuild := "2.1.1"
 ) ++ promulgateVersionSettings ++
   promulgateBuildInfoSettings ++ Seq(BuildInfoKeys.pkg := "org.atnos.origami."+moduleName) ++
   promulgateSourceSettings
