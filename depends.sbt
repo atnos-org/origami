@@ -1,11 +1,8 @@
 lazy val effVersion    = "2.2.0"
 lazy val specs2Version = "3.8.6"
 
-libraryDependencies in Global :=
-  eff    ++
-  specs2
-
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+libraryDependencies in Global ++=
+  eff ++ specs2
 
 resolvers ++= Seq(
     Resolver.sonatypeRepo("releases")
@@ -16,9 +13,8 @@ lazy val eff = Seq(
   "org.atnos" %% "eff" % effVersion)
 
 lazy val specs2 = Seq(
-    "org.specs2" %% "specs2-core"
+  "org.specs2" %% "specs2-core"
   , "org.specs2" %% "specs2-matcher-extra"
   , "org.specs2" %% "specs2-scalacheck"
   , "org.specs2" %% "specs2-html"
-  , "org.specs2" %% "specs2-junit").map(_ % specs2Version % "test")	
-
+  , "org.specs2" %% "specs2-junit").map(_ % specs2Version % "test")
