@@ -36,8 +36,7 @@ def buildSettings = Seq(
   scalacOptions ++= commonScalacOptions,
   scalacOptions in (Compile, doc) ++= (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
   si2712,
-  libraryDependencies ++= si2712Dependency(scalaVersion.value),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+  libraryDependencies ++= si2712Dependency(scalaVersion.value)
 ) ++ warnUnusedImport ++ prompt
 
 lazy val tagName = Def.setting{

@@ -1,9 +1,11 @@
 lazy val effVersion    = "2.2.0"
 lazy val specs2Version = "3.8.6"
 
- libraryDependencies in Global :=
-   eff    ++
-   specs2
+libraryDependencies in Global :=
+  eff    ++
+  specs2
+
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
 
 resolvers ++= Seq(
     Resolver.sonatypeRepo("releases")
