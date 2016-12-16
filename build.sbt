@@ -25,18 +25,19 @@ lazy val lib = project.in(file("lib"))
 
 def moduleSettings(moduleName: String) = Seq(
   organization := "org.atnos",
-  name := "origami-"+moduleName,
-  version in ThisBuild := "2.2.0"
+  name := "origami-"+moduleName
 ) ++ promulgateVersionSettings ++
   promulgateBuildInfoSettings ++ Seq(BuildInfoKeys.pkg := "org.atnos.origami."+moduleName) ++
   promulgateSourceSettings
 
 def buildSettings = Seq(
-  scalaVersion := "2.11.8",
+  scalaVersion := "2.12.1",
+  crossScalaVersions := Seq("2.11.8", "2.12.1"),
   scalacOptions ++= commonScalacOptions,
-  scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1"),
-  addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
+  scalacOptions in (Compile, doc) ++= (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
+  si2712,
+  libraryDependencies ++= si2712Dependency(scalaVersion.value),
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
 ) ++ warnUnusedImport ++ prompt
 
 lazy val tagName = Def.setting{
@@ -69,7 +70,6 @@ lazy val commonScalacOptions = Seq(
   "-unchecked",
   "-Xfatal-warnings",
   "-Xlint",
-  "-Yinline-warnings",
   "-Yno-adapted-args",
   "-Ywarn-numeric-widen",
   "-Ywarn-value-discard",
@@ -104,8 +104,8 @@ lazy val sharedReleaseProcess = Seq(
   , setReleaseVersion
   , commitReleaseVersion
   , tagRelease
-  , generateWebsite
-  , publishSite
+//  , generateWebsite
+//  , publishSite
   , publishArtifacts
   , setNextVersion
   , commitNextVersion
@@ -175,3 +175,14 @@ def testTask(task: TaskKey[Tests.Output]) =
   task <<= (streams in Test, loadedTestFrameworks in Test, testLoader in Test,
     testGrouping in Test in test, testExecution in Test in task,
     fullClasspath in Test in test, javaHome in test) flatMap Defaults.allTestGroupsTask
+
+lazy val si2712 =
+  scalacOptions ++=
+    (if (CrossVersion.partialVersion(scalaVersion.value).exists(_._2 >= 12)) Seq("-Ypartial-unification")
+    else Seq())
+
+def si2712Dependency(scalaVersion: String) =
+  if (CrossVersion.partialVersion(scalaVersion).exists(_._2 < 12))
+    Seq(compilerPlugin("com.milessabin" % ("si2712fix-plugin_"+scalaVersion) % "1.2.0"))
+  else
+    Seq()
