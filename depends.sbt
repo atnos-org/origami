@@ -1,4 +1,4 @@
-lazy val effVersion    = "2.2.0"
+lazy val effVersion    = "2.3.0"
 lazy val specs2Version = "3.8.6"
 
 libraryDependencies in Global ++=
