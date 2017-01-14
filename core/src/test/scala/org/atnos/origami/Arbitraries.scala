@@ -7,8 +7,6 @@ import Prop._
 import cats._
 import cats.data._
 import cats.implicits._
-import org.atnos.eff._, eff._
-import org.atnos.eff.syntax.eff._
 
 object Arbitraries {
 
@@ -23,15 +21,15 @@ object Arbitraries {
       init <- Gen.choose(0, 10)
       fd   <- Gen.oneOf((s: Int, i: Int) => s + i, (s: Int, i: Int) => s * i)
       last <- Gen.oneOf((i: Int) => i.toString, (i: Int) => (i*2).toString)
-    } yield new Fold[NoFx, Int, String] {
+    } yield new FoldId[Int, String] {
       type S = Int
 
-      def start       = pure(init)
+      def start       = init
       def fold        = fd
-      def end(s: Int) = pure(last(s))
+      def end(s: Int) = last(s)
 
       override def toString = {
-        val foldres = this.run((1 to 10).toList).run
+        val foldres = this.run((1 to 10).toList)
         "int fold with init "+ init + " and fold result "+foldres
       }
     }
@@ -42,12 +40,12 @@ object Arbitraries {
       init <- arbitrary[Int]
       fd   <- Gen.oneOf((s: Int, s2: String) => s + s2.size, (s: Int, s2: String) => s * s2.size)
       last <- Gen.oneOf((s: Int) => s.toString, (s: Int) => (s*2).toString)
-    } yield new Fold[NoFx, String, String] {
+    } yield new FoldId[String, String] {
       type S = Int
 
-      def start       = pure(init)
+      def start       = init
       def fold        = fd
-      def end(s: Int) = pure(last(s))
+      def end(s: Int) = last(s)
 
       override def toString = "bytes fold"
     }
@@ -61,9 +59,9 @@ object Arbitraries {
     } yield new FoldInt[Int] {
       type S = Int
 
-      def start       = pure(init)
+      def start       = init
       def fold        = fd
-      def end(s: Int) = pure(last(s))
+      def end(s: Int) = last(s)
 
       override def toString = {
         val foldres = this.run((1 to 10).toList)
@@ -77,12 +75,12 @@ object Arbitraries {
       init <- Gen.choose(0, 10).map(_.toString)
       fd   <- Gen.oneOf((s: String, i: String) => s + i, (s: String, i: String) => i + s + i)
       last <- Gen.oneOf((i: String) => i.size, (i: String) => i.size * 2)
-    } yield new Fold[NoFx, String, Int] {
+    } yield new FoldId[String, Int] {
       type S = String
 
-      def start     = pure(init)
+      def start     = init
       def fold      = fd
-      def end(s: S) = pure(last(s))
+      def end(s: S) = last(s)
 
       override def toString = {
         val foldres = this.run((0 to 10).toList.map(_.toString))
@@ -95,13 +93,13 @@ object Arbitraries {
     for {
       init <- Gen.choose(0, 10)
       fd   <- Gen.oneOf((s: Int, i: Int) => s + i, (s: Int, i: Int) => s * i)
-      last <- Gen.oneOf((i: Int) => i, (i: Int) => (i*2))
-    } yield new Fold[NoFx, Int, String => Int] {
+      last <- Gen.oneOf((i: Int) => i, (i: Int) => i*2)
+    } yield new FoldId[Int, String => Int] {
       type S = Int
 
-      def start       = pure(init)
+      def start       = init
       def fold        = fd
-      def end(s: Int) = pure((string: String) => string.size+last(s))
+      def end(s: Int) = (string: String) => string.size + last(s)
 
       override def toString = {
         val foldres = this.run((0 to 10).toList)
@@ -114,13 +112,13 @@ object Arbitraries {
     for {
       init <- Gen.choose(0, 10)
       fd   <- Gen.oneOf((s: Int, i: Int) => s + i, (s: Int, i: Int) => s * i)
-      last <- Gen.oneOf((i: Int) => i, (i: Int) => (i*2))
-    } yield new Fold[NoFx, Int, Int => String] {
+      last <- Gen.oneOf((i: Int) => i, (i: Int) => i*2)
+    } yield new FoldId[Int, Int => String] {
       type S = Int
 
-      def start       = pure(init)
+      def start       = init
       def fold        = fd
-      def end(s: Int) = pure((i: Int) => (i+last(s)).toString)
+      def end(s: Int) = (i: Int) => (i+last(s)).toString
 
       override def toString = {
         val foldres = this.run((0 to 10).toList)
@@ -152,9 +150,6 @@ object Arbitraries {
 
   implicit def EqualString: Eq[String] =
     Eq.fromUniversalEquals[String]
-
-  implicit def EqEff[A](implicit eq: Eq[A]): Eq[Eff[NoFx, A]] =
-    eq.on(_.run)
 
   implicit class approxEqual(d1: Double) {
     def ==~(d2: Double) = math.abs(d1 - d2) <= 0.001

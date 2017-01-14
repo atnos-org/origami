@@ -2,5 +2,5 @@
 <br/>
 [![Build Status](https://travis-ci.org/atnos-org/origami.png)](https://travis-ci.org/atnos-org/origami)
 
-The ***origami*** project provides "Monadic folds" to process streams of data in a composible fashion where effects are
- supported with the eff-cats library.
+The ***origami*** project provides "Monadic folds" to process streams of data in a composable fashion where effects are
+ supported by some monad.

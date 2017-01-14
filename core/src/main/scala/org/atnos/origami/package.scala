@@ -1,21 +1,18 @@
 package org.atnos
 
-import org.atnos.eff.NoFx
+import cats.Id
 
 package object origami {
 
   object fold extends FoldCreation
 
-  /** alias for a non-effectful Fold */
-  type FoldId[A, U] = Fold[NoFx, A, U]
-
   /** alias for a non-effectful Fold where the state type is U */
-  type FoldState[A, B] = Fold[NoFx, A, B] { type S = B }
+  type FoldState[A, B] = Fold[Id, A, B] { type S = B }
 
   /** alias for a Fold sinking its last value */
-  type Sink[R, A] = Fold[R, A, Unit]
+  type Sink[M[_], A] = Fold[M, A, Unit]
 
   /** alias for a Fold exposing it state type */
-  type Aux[R, A, B, S1] = Fold[R, A, B] { type S = S1 }
+  type Aux[M[_], A, B, S1] = Fold[M, A, B] { type S = S1 }
 
 }

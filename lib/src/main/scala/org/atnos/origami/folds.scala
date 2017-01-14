@@ -1,9 +1,9 @@
 package org.atnos.origami
 
 import cats._, data._
-import cats.implicits._
+import cats.syntax.flatMap._
+import cats.syntax.either._
 import org.atnos.origami.fold._
-import org.atnos.eff._, eff._
 
 /**
  * List of predefined Folds
@@ -28,91 +28,99 @@ object folds {
     fromMonoidMap((a: A) => if (predicate(a)) 1L else 0L)(LongAdditiveMonoid)
 
   /** @return fold to count the number of unique elements */
-  def countUnique[A]: FoldId[A, Int] = new Fold[NoFx, A, Int] {
+  def countUnique[A]: FoldId[A, Int] = new FoldId[A, Int] {
     type S = scala.collection.mutable.HashSet[A]
-    def start = pure(new scala.collection.mutable.HashSet[A])
+
+    def start = new scala.collection.mutable.HashSet[A]
     def fold = (s: S, a: A) => { s.add(a); s }
-    def end(s: S) = pure(s.size)
+    def end(s: S) = s.size
   }
 
   /** @return return false if the list is empty or if all elements are false, use a Either state to indicate early success */
-  def any[A](f: A => Boolean) = new Fold[NoFx, A, Boolean] {
+  def any[A](f: A => Boolean) = new FoldId[A, Boolean] {
     type S = Boolean Either Boolean
-    def start = pure(Either.left(false))
+
+    def start = Either.left(false)
     def fold = (s: S, a: A) => if (f(a)) Either.right(true) else s
-    def end(s: S) = pure(s.fold(b => b, b => b))
+    def end(s: S) = s.fold(b => b, b => b)
   }
   /** @return return true if the list is empty or if all elements are true, use a Either state to indicate early failure */
-  def all[A](f: A => Boolean) = new Fold[NoFx, A, Boolean] {
+  def all[A](f: A => Boolean) = new FoldId[A, Boolean] {
     type S = Boolean Either Boolean
-    def start = pure(Either.left(true))
+
+    def start = Either.left(true)
     def fold = (s: S, a: A) => if (!f(a)) Either.right(false) else s
-    def end(s: S) = pure(s.fold(b => b, b => b))
+    def end(s: S) = s.fold(b => b, b => b)
   }
 
   /** @return the first element */
   def first[A]: FoldState[A, Option[A]] =
-    fromFoldLeft[NoFx, A, Option[A]](None)((u, a) => u.orElse(Option(a)))
+    fromFoldLeft[A, Option[A]](None)((u, a) => u.orElse(Option(a)))
 
   /** @return the last element */
   def last[A]: FoldState[A, Option[A]] =
-    fromFoldLeft[NoFx, A, Option[A]](None)((u, a) => Option(a))
+    fromFoldLeft[A, Option[A]](None)((u, a) => Option(a))
 
   /** @return the first n elements */
-  def firstN[A](n: Int) = new Fold[NoFx, A, List[A]] {
+  def firstN[A](n: Int) = new FoldId[A, List[A]] {
     type S = scala.collection.mutable.ListBuffer[A]
-    def start = pure(new scala.collection.mutable.ListBuffer[A])
+
+    def start = new scala.collection.mutable.ListBuffer[A]
     def fold = (s: S, a: A) => { if (s.size < n) s.append(a); s }
-    def end(s: S) = pure(s.toList)
+    def end(s: S) = s.toList
   }
 
   /** @return the last n elements */
-  def lastN[A](n: Int) = new Fold[NoFx, A, List[A]] {
+  def lastN[A](n: Int) = new FoldId[A, List[A]] {
     type S = scala.collection.mutable.ListBuffer[A]
-    def start = pure(new scala.collection.mutable.ListBuffer[A])
+
+    def start = new scala.collection.mutable.ListBuffer[A]
     def fold = (s: S, a: A) => { s.append(a); if (s.size > n) s.remove(0); s }
-    def end(s: S) = pure(s.toList)
+    def end(s: S) = s.toList
   }
 
   /** @return the number of times an element changes its value */
-  def flips[A] = new Fold[NoFx, A, Int] {
+  def flips[A] = new FoldId[A, Int] {
     private var last: A = null.asInstanceOf[A]
     type S = Int
-    def start = pure(0)
+
+    def start = 0
     def fold = (s: S, a: A) =>
       if (last == null)   { last = a; s }
       else if (last != a) { last = a; s + 1 }
       else s
-    def end(s: S) = pure(s)
+    def end(s: S) = s
   }
 
   /** @return the number of times an element changes its value */
-  def flipsLong[A] = new Fold[NoFx, A, Long] {
+  def flipsLong[A] = new FoldId[A, Long] {
     private var last: A = null.asInstanceOf[A]
     type S = Long
-    def start = pure(0L)
+
+    def start = 0L
     def fold = (s: S, a: A) =>
       if (last == null)   { last = a; s }
       else if (last != a) { last = a; s + 1L }
       else s
-    def end(s: S) = pure(s)
+    def end(s: S) = s
   }
 
   /** @return the proportion of elements satisfying a given predicate */
-  def proportion[A](predicate: A => Boolean): FoldId[A, Double] =
+  def proportion[A](predicate: A => Boolean): Fold[Id, A, Double] =
     (count[A] zip countOf(predicate)).map { case (total, passed) =>
       if (total == 0) 0.0
       else            passed.toDouble / total
     }
 
   /** @return gradient of a given variable A, compared to another V */
-  def gradient[A : Numeric, V : Numeric]: FoldId[(A, V), Double] = new Fold[NoFx, (A, V), Double] {
+  def gradient[A : Numeric, V : Numeric]: FoldId[(A, V), Double] = new FoldId[(A, V), Double] {
     implicit val nt = implicitly[Numeric[A]]
     implicit val nv = implicitly[Numeric[V]]
 
     //       (count, sumx, sumy, sumyy, sumxy)
     type S = (Long, Long, Long, Long, Long)
-    def start = pure((0L, 0L, 0L, 0L, 0L))
+
+    def start = (0L, 0L, 0L, 0L, 0L)
     def fold = (s: S, tv: (A, V)) => {
       val (a, v) = tv
       val (tl, vl) = (nt.toLong(a), nv.toLong(v))
@@ -124,7 +132,8 @@ object folds {
         sumxy + (tl * vl)
         )
     }
-    def end(s: S) = pure {
+
+    def end(s: S) = {
       val (count, sumx, sumy, sumyy, sumxy) = s
       val z = (sumyy * count) - (sumy * sumy)
       if (z == 0) 0.0
@@ -141,7 +150,7 @@ object folds {
     fromFoldLeft(implicitly[Numeric[N]].zero)(implicitly[Numeric[N]].plus)
 
   /** @return a plus fold from a mapping to a Num */
-  def plusBy[A, N : Numeric](f: A => N): FoldState[A, N] =
+  def plusBy[A, N : Numeric](f: A => N): Fold[Id, A, N] { type S = N } =
     plus[N].contramap[A](f)
 
   /** @return a times fold from a Num */
@@ -149,11 +158,11 @@ object folds {
     fromFoldLeft(implicitly[Numeric[N]].zero)(implicitly[Numeric[N]].times)
 
   /** @return a times fold from a mapping to a Num */
-  def timesBy[A, N : Numeric](f: A => N): FoldState[A, N]  =
-    times[N].contramap[A](f)
+  def timesBy[A, N : Numeric](f: A => N): Fold[Id, A, N] { type S = N } =
+    times[N].contramap(f)
 
   /** @return the mean of elements */
-  def mean[N : Fractional]: FoldId[N, N] { type S = (N, Int) } =
+  def mean[N : Fractional]: Fold[Id, N, N] { type S = (N, Int) } =
     plus.zip(count).map { case (s, c) =>
       val frac = implicitly[Fractional[N]]; import frac._
 
@@ -162,18 +171,18 @@ object folds {
     }
 
   /** @return the number of elements, mean and standard deviation */
-  def stddev[N : Fractional]: FoldId[N, Double] =
+  def stddev[N : Fractional]: Fold[Id, N, Double] =
     onlineStddev.map(_._3)
 
   /** @return the number of elements, mean and standard deviation */
-  def onlineStddev[N : Fractional]: FoldId[N, (Int, N, Double)] =
+  def onlineStddev[N : Fractional]: Fold[Id, N, (Int, N, Double)] =
     onlineVariance map { case (count, mean, variation) =>
       implicit val num = implicitly[Fractional[N]]; import num._
       (count, mean, math.sqrt(toDouble(variation)))
     }
 
   /** @return the number of elements, mean and variance */
-  def onlineVariance[N : Fractional]: FoldId[N, (Int, N, N)] =
+  def onlineVariance[N : Fractional]: Fold[Id, N, (Int, N, N)] =
     onlineVariation map { case (count, mean, variation) =>
       implicit val num = implicitly[Fractional[N]]; import num._
 
@@ -182,7 +191,7 @@ object folds {
     }
 
   /** @return the number of elements, mean and unbiased variance */
-  def onlineUnbiasedVariance[N : Fractional]: FoldId[N, (Int, N, N)] =
+  def onlineUnbiasedVariance[N : Fractional]: Fold[Id, N, (Int, N, N)] =
     onlineVariation map { case (count, mean, variation) =>
       implicit val num = implicitly[Fractional[N]]; import num._
 
@@ -191,10 +200,11 @@ object folds {
     }
 
   /** @return the number of elements, mean and variation */
-  def onlineVariation[N : Fractional]: FoldId[N, (Int, N, N)] = new Fold[NoFx, N, (Int, N, N)] {
+  def onlineVariation[N : Fractional]: FoldId[N, (Int, N, N)] = new FoldId[N, (Int, N, N)] {
     implicit val num = implicitly[Fractional[N]]; import num._
     type S = (Int, N, N)
-    def start = pure((0, num.zero, num.zero))
+
+    def start = (0, num.zero, num.zero)
 
     def fold = (s: S, n: N) => {
       val (count, mean, variation) = s
@@ -207,7 +217,7 @@ object folds {
       (count1, mean1, variation1)
     }
 
-    def end(s: S) = pure(s)
+    def end(s: S) = s
   }
 
   /** a fold where the current state is a random Int */
@@ -227,42 +237,47 @@ object folds {
     randomWithGeneratorAndFunction[A, Double](new util.Random(seed), (_:util.Random).nextDouble)
 
   /** create a fold for a mutable Random object */
-  def randomWithGeneratorAndFunction[A, R](random: util.Random, f: util.Random => R) = new Fold[NoFx, A, Option[R]] {
+  def randomWithGeneratorAndFunction[A, R](random: util.Random, f: util.Random => R) = new FoldId[A, Option[R]] {
     type S = (util.Random, Option[R])
-    def start = pure((random, None))
+
+    def start = (random, None)
     def fold = (s: S, a: A) => { val r = f(s._1); (s._1, Option(r)) }
-    def end(s: S) = pure(Option(f(s._1)))
+    def end(s: S) = Option(f(s._1))
   }
 
   /**
    * return an arbitrary streamed element so that each element has the same probability
    * be chosen
    */
-  def reservoirSampling[A] = new Fold[NoFx, A, Option[A]] {
+  def reservoirSampling[A] = new FoldId[A, Option[A]] {
     type S = (scala.util.Random, Int, Option[A])
-    def start = pure((new scala.util.Random, 0, None))
+
+    def start = (new scala.util.Random, 0, None)
+
     def fold = (s: S, a: A) => {
       val (random, n, selected) = s
       val newSelection =
         selected match {
-          case Some(a) =>
+          case Some(a1) =>
             val r = random.nextInt(n + 1) + 1
-            if (r == 1) Some(a) else selected
+            if (r == 1) Some(a1) else selected
 
           case None => Some(a)
         }
       (random, n + 1, newSelection)
     }
-    def end(s: S) = pure(s._3)
+
+    def end(s: S) = s._3
   }
 
   /** @return a Fold which simply accumulates elements into a List */
-  def list[A]: Fold[NoFx, A, List[A]] = new Fold[NoFx, A, List[A]] {
+  def list[A]: FoldId[A, List[A]] = new FoldId[A, List[A]] {
     // a ListBuffer is used for efficient appends
     type S = scala.collection.mutable.ListBuffer[A]
-    def start = pure(new scala.collection.mutable.ListBuffer[A])
+
+    def start = new scala.collection.mutable.ListBuffer[A]
     def fold = (s: S, a: A) => { s.append(a); s }
-    def end(s: S) = pure(s.toList)
+    def end(s: S) = s.toList
   }
 
   private val IntAdditiveMonoid = new Monoid[Int] {

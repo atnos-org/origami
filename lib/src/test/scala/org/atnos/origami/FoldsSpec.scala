@@ -3,8 +3,6 @@ package org.atnos.origami
 import folds._
 import cats._, data._
 import cats.implicits._
-import org.atnos.eff._, eff._
-import org.atnos.eff.syntax.eff._
 import org.scalacheck._, Prop._, Arbitrary._
 import Arbitraries._
 
@@ -40,43 +38,43 @@ object FoldsSpec extends Properties("Folds") {
   // see https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf: "the essence of the Iterator pattern"
   property("line/word/char count") = lineWordCharCount
 
-  type F[A, B] = Fold[NoFx, A, B]
+  type F[A, B] = Fold[Id, A, B]
   type FInt[A] = F[Int, A]
 
   def countFold = forAll { list: List[Int] =>
-    count[Int].run(list).run ?= list.size
+    count[Int].run(list) ?= list.size
   }
 
   def countOfFold = forAll { list: List[Int] =>
-    countOf[Int](isEven).run(list).run ?= list.count(isEven)
+    countOf[Int](isEven).run(list) ?= list.count(isEven)
   }
 
   def countUniqueFold = forAll { list: List[Int] =>
-    countUnique[Int].run(list).run ?= list.distinct.size
+    countUnique[Int].run(list) ?= list.distinct.size
   }
 
   def anyFold = forAll { list: List[Boolean] =>
-    folds.any[Boolean](identity _).run(list).run ?= list.exists(identity _)
+    folds.any[Boolean](identity _).run(list) ?= list.exists(identity _)
   }
 
   def allFold = forAll { list: List[Boolean] =>
-    folds.all[Boolean](identity _).run(list).run ?= list.forall(identity _)
+    folds.all[Boolean](identity _).run(list) ?= list.forall(identity _)
   }
 
   def firstFold = forAll { list: List[Int] =>
-    first[Int].run(list).run ?= list.headOption
+    first[Int].run(list) ?= list.headOption
   }
 
   def lastFold = forAll { list: List[Int] =>
-    last[Int].run(list).run ?= list.lastOption
+    last[Int].run(list) ?= list.lastOption
   }
 
   def firstNFold = forAll { (list: List[Int], n: SmallInt) =>
-    firstN[Int](n.value).run(list).run ?= list.take(n.value)
+    firstN[Int](n.value).run(list) ?= list.take(n.value)
   }
 
   def lastNFold = forAll { (list: List[Int], n: SmallInt) =>
-    lastN[Int](n.value).run(list).run ?= list.takeRight(n.value)
+    lastN[Int](n.value).run(list) ?= list.takeRight(n.value)
   }
 
   def flipsFold = forAll { list: List[SmallInt] =>
@@ -89,18 +87,18 @@ object FoldsSpec extends Properties("Folds") {
     }._1
 
     val expected = if (consecutiveSizes.isEmpty) 0 else consecutiveSizes.size - 1
-    flips[Boolean].run(booleans).run ?= expected
+    flips[Boolean].run(booleans) ?= expected
   }
 
   def proportionFold = forAll { list: List[Int] =>
-    val p = proportion[Int](isEven).run(list).run
+    val p = proportion[Int](isEven).run(list)
     if (list.isEmpty) p ?= 0.0
     else              p ?= list.filter(isEven).size.toDouble / list.size
   }
 
   def gradientFold = forAll { lists: List[(SmallInt, SmallInt)] =>
     val list = lists.map { case (x, y) => (x.value, y.value) }
-    val g = gradient[Int, Int].run(list).run
+    val g = gradient[Int, Int].run(list)
 
     if (list.size <= 1) g ?= 0.0
     else {
@@ -114,24 +112,24 @@ object FoldsSpec extends Properties("Folds") {
   }
 
   def plusFold = forAll { list: List[Int] =>
-    plus[Int].run(list).run ?= list.foldLeft(0)(_ + _)
+    plus[Int].run(list) ?= list.foldLeft(0)(_ + _)
   }
 
   def plusByFold = forAll { list: List[String] =>
-    plusBy((_: String).size).run(list).run ?= list.foldLeft(0)(_ + _.size)
+    plusBy((_: String).size).run(list) ?= list.foldLeft(0)(_ + _.size)
   }
 
   def timesByFold = forAll { list: List[String] =>
-    timesBy((_: String).size).run(list).run ?= list.foldLeft(0)(_ * _.size)
+    timesBy((_: String).size).run(list) ?= list.foldLeft(0)(_ * _.size)
   }
 
   def timesFold = forAll { list: List[Int] =>
-    times[Int].run(list).run ?= list.foldLeft(0)(_ * _)
+    times[Int].run(list) ?= list.foldLeft(0)(_ * _)
   }
 
   def meanFold = forAll { list: List[Double] =>
-    if (list.isEmpty) mean[Double].run(list).run ?= 0.0
-    else              mean[Double].run(list).run ?= list.sum / list.size
+    if (list.isEmpty) mean[Double].run(list) ?= 0.0
+    else              mean[Double].run(list) ?= list.sum / list.size
   }
 
   def onlineVarianceFold = forAll { nel: NonEmptyList[SmallDouble] =>
@@ -142,7 +140,7 @@ object FoldsSpec extends Properties("Folds") {
       if (count == 1) 0
       else            (list.map(x => x * x).sum - (list.sum * list.sum) / count) / count
 
-    val (c, m, v) = onlineVariance[Double].run(list).run
+    val (c, m, v) = onlineVariance[Double].run(list)
 
     (c == count)     :| "count" &&
     (m ==~ mean)     :| "mean"  &&
@@ -151,19 +149,20 @@ object FoldsSpec extends Properties("Folds") {
 
   def lineWordCharCount = forAll { list1: List[String] =>
     val list = List("")
-    val countChars: FoldId[Char, Int] = count[Char]
-    val countWords: FoldId[Char, Int] = new Fold[NoFx, Char, Int] {
+    val countChars: Fold[Id, Char, Int] = count[Char]
+    val countWords: FoldId[Char, Int] = new FoldId[Char, Int] {
       type S = (Boolean, Int)
-      def start = pure((false, 0))
+
+      def start = (false, 0)
       def fold = (s: S, t: Char) => {
         val (inWord, count) = s
         (t != ' ', if (!inWord && t != ' ') count + 1 else count)
       }
-      def end(s: S) = pure(s._2)
+      def end(s: S) = s._2
     }
     val countLines = count[String]
 
-    val countLinesWordsChars: FoldId[String, ((Int, Int), Int)] =
+    val countLinesWordsChars: Fold[Id, String, ((Int, Int), Int)] =
       countLines zip
       countWords.nest(_.toList) zip
       countChars.nest(_.toList)
@@ -171,24 +170,24 @@ object FoldsSpec extends Properties("Folds") {
     val words = list.flatMap(_.split(" ", -1)).filter(_.nonEmpty)
     val chars = words.flatMap(_.toList)
 
-    countLinesWordsChars.run(list).run ?= (((list.size, words.size), chars.size))
+    countLinesWordsChars.run(list) ?= (((list.size, words.size), chars.size))
   }
 
   def stateFold = forAll { list: List[Int] =>
-    val stateFold: FoldId[Int, Option[Int]] = fold.fromStateEval((i: Int) => State[Int, Int] { count: Int =>
+    val stateFold: Fold[Id, Int, Option[Int]] = fold.fromStateEval((i: Int) => State[Int, Int] { count: Int =>
       val above10 = i >= 10
       val newCount = if (above10) count + 1 else count
       (newCount, newCount)
     })(0)
 
-    stateFold.run(list).run.getOrElse(0) ?= list.count(_ > 10)
+    stateFold.run(list).getOrElse(0) ?= list.count(_ > 10)
   }
 
   def randomFold = forAll { list: List[Int] =>
     val randomElements =
       randomInt[Int] compose folds.list
 
-    val result = randomElements.run(list).run
+    val result = randomElements.run(list)
 
     result.size ?= list.size
   }
@@ -196,7 +195,7 @@ object FoldsSpec extends Properties("Folds") {
   def reservoirSamplingFold = forAll { list1: List[Int] =>
     val list = list1.distinct
     val sampling = reservoirSampling[Int]
-    val nSamples = (1 to list.size).map(_ => sampling.run(list).run)
+    val nSamples = (1 to list.size).map(_ => sampling.run(list))
     nSamples.flatten.distinct.size - list.size <= 2
   }
 
