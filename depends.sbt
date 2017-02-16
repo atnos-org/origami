@@ -1,5 +1,5 @@
-lazy val catsVersion   = "0.8.1"
-lazy val specs2Version = "3.8.6"
+lazy val catsVersion   = "0.9.0"
+lazy val specs2Version = "3.8.8"
 
 libraryDependencies in Global ++=
   cats ++
