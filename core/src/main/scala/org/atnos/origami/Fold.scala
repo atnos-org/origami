@@ -2,6 +2,7 @@ package org.atnos
 package origami
 
 import cats._
+import cats.free._
 import cats.data.State
 import cats.arrow.{Category, Compose}
 import cats.functor.Profunctor
@@ -18,7 +19,7 @@ import FoldCreation._
  *  - a 'fold' method to accumulate state
  *  - an 'end' method to finalize the result
  *
- * Both 'start' and 'end' have an effect which allows the whole folding to take place inside a context.
+ * Those 3 methods use a monad for effects
  *
  */
 trait Fold[M[_], A, B] { self =>
@@ -27,7 +28,7 @@ trait Fold[M[_], A, B] { self =>
   type S
 
   def start: M[S]
-  def fold: (S, A) => S
+  def fold: (S, A) => M[S]
   def end(s: S): M[B]
 
   /** map the output value */
@@ -65,9 +66,9 @@ trait Fold[M[_], A, B] { self =>
     type S = (self.S, f.S)
     implicit val monad: Monad[M] = self.monad
 
-    def start = (self.start |@| f.start).map((_,_))
-    def fold = (s: S, av: (A, V)) => (self.fold(s._1, av._1), f.fold(s._2, av._2))
-    def end(s: S) = (self.end(s._1) |@| f.end(s._2)).map((_,_))
+    def start = monad.tuple2(self.start, f.start)
+    def fold = (s: S, av: (A, V)) => monad.tuple2(self.fold(s._1, av._1), f.fold(s._2, av._2))
+    def end(s: S) = monad.tuple2(self.end(s._1), f.end(s._2))
   }
 
   /** fanout = zip in the Arrow terminology */
@@ -93,9 +94,9 @@ trait Fold[M[_], A, B] { self =>
     type S = (self.S, f.S)
     implicit val monad: Monad[M] = self.monad
 
-    def start = Apply[M[?]].tuple2(self.start, f.start)
-    def fold = (s, a) => (self.fold(s._1, a), f.fold(s._2, a))
-    def end(s: S) = Apply[M].tuple2(self.end(s._1), f.end(s._2))
+    def start = monad.tuple2(self.start, f.start)
+    def fold = (s, a) => monad.tuple2(self.fold(s._1, a), f.fold(s._2, a))
+    def end(s: S) = monad.tuple2(self.end(s._1), f.end(s._2))
   }
 
   /** zip with another fold, running this one only for its side effects */
@@ -119,9 +120,9 @@ trait Fold[M[_], A, B] { self =>
     type S = (self.S, sink.S)
     implicit val monad: Monad[M] = self.monad
 
-    def start = Apply[M[?]].tuple2(self.start , sink.start)
-    def fold = (s: S, a: A) => (self.fold(s._1, a), sink.fold(s._2, (a, s._1)))
-    def end(s: S) = Apply[M[?]].tuple2(self.end(s._1), sink.end(s._2)).map(_._1)
+    def start = monad.tuple2(self.start , sink.start)
+    def fold = (s: S, a: A) => monad.tuple2(self.fold(s._1, a), sink.fold(s._2, (a, s._1)))
+    def end(s: S) = monad.tuple2(self.end(s._1), sink.end(s._2)).map(_._1)
   }
 
   /** alias for observeWithState */
@@ -133,9 +134,9 @@ trait Fold[M[_], A, B] { self =>
     type S = (self.S, sink.S)
     implicit val monad: Monad[M] = self.monad
 
-    def start = Apply[M[?]].tuple2(self.start , sink.start)
-    def fold = (s: S, a: A) => (self.fold(s._1, a), sink.fold(s._2, s._1))
-    def end(s: S) = Apply[M[?]].tuple2(self.end(s._1), sink.end(s._2)).map(_._1)
+    def start = monad.tuple2(self.start , sink.start)
+    def fold = (s: S, a: A) => monad.tuple2(self.fold(s._1, a), sink.fold(s._2, s._1))
+    def end(s: S) = monad.tuple2(self.end(s._1), sink.end(s._2)).map(_._1)
   }
 
   /** alias for observeState */
@@ -147,9 +148,9 @@ trait Fold[M[_], A, B] { self =>
     type S = (self.S, sink.S)
     implicit val monad: Monad[M] = self.monad
 
-    def start = Apply[M[?]].tuple2(self.start , sink.start)
-    def fold = (s: S, a: A) => { val next = self.fold(s._1, a); (next, sink.fold(s._2, (a, next))) }
-    def end(s: S) = Apply[M[?]].tuple2(self.end(s._1), sink.end(s._2)).map(_._1)
+    def start = monad.tuple2(self.start , sink.start)
+    def fold = (s: S, a: A) => self.fold(s._1, a).flatMap(next => sink.fold(s._2, (a, next)).map((next, _)))
+    def end(s: S) = monad.tuple2(self.end(s._1), sink.end(s._2)).map(_._1)
   }
 
   /** alias for observeWithNextState */
@@ -161,9 +162,9 @@ trait Fold[M[_], A, B] { self =>
     type S = (self.S, sink.S)
     implicit val monad: Monad[M] = self.monad
 
-    def start = Apply[M[?]].tuple2(self.start , sink.start)
-    def fold = (s: S, a: A) => { val next = self.fold(s._1, a); (next, sink.fold(s._2, next)) }
-    def end(s: S) = Apply[M[?]].tuple2(self.end(s._1), sink.end(s._2)).map(_._1)
+    def start = monad.tuple2(self.start , sink.start)
+    def fold = (s: S, a: A) => self.fold(s._1, a).flatMap(next => sink.fold(s._2, next).map((next, _)))
+    def end(s: S) = monad.tuple2(self.end(s._1), sink.end(s._2)).map(_._1)
   }
 
   /** alias for observeNextState */
@@ -174,44 +175,40 @@ trait Fold[M[_], A, B] { self =>
    * run a Fold with a Foldable instance
    */
   def run[F[_] : Foldable](foldable: F[A]): M[B] =
-    start.flatMap { s =>
-      end(foldable.foldLeft(s)((res, cur) => fold(res, cur)))
-    }
-
+    start.flatMap(s => Free.foldLeftM(foldable, s)(fold).flatMap(end))
+  
   /**
    * run over one element
    */
   def run1(a: A): M[B] =
-    start.flatMap(s => end(fold(s, a)))
+    start.flatMap(s => fold(s, a).flatMap(end))
 
 
   /** pipe the output of this fold into another fold */
   def compose[C](f2: Fold[M, B, C]) = new Fold[M, A, C] {
-    type S = M[(self.S, f2.S)]
+    type S = (self.S, f2.S)
     implicit val monad: Monad[M] = self.monad
 
-    def start = monad.pure(monad.tuple2(self.start, f2.start))
+    def start = monad.tuple2(self.start, f2.start)
 
     def fold = (s, a) =>
-      s.flatMap { case (f1s, f2s) =>
-        self.end(self.fold(f1s, a)).map((u: B) => (self.fold(f1s, a), f2.fold(f2s, u)))
-      }
+     self.fold(s._1, a).flatMap(self.end).flatMap((u: B) => monad.tuple2(self.fold(s._1, a), f2.fold(s._2, u)))
 
-    def end(s: S) = s.flatMap { case (f1s, f2s) =>
-      f2.end(f2s)
-    }
+    def end(s: S) = 
+      f2.end(s._2)
   }
 
   /** create a fold that will run this fold repeatedly on input elements and collect all results */
   def nest[F[_], C](f: C => F[A])(implicit monoid: Monoid[B], foldable: Foldable[F]) = new Fold[M, C, B] {
-    type S = M[B]
+    type S = B
     implicit val monad: Monad[M] = self.monad
 
-    def start = monad.pure(monad.pure(monoid.empty))
-    def fold = (s: S, c: C) =>
-      self.run(f(c)).flatMap((b: B) => s.map(s1 => monoid.combine(s1, b)))
+    def start = monad.pure(monoid.empty)
 
-    def end(s: S) = s
+    def fold = (s: S, c: C) =>
+      self.run(f(c)).map((b: B) => monoid.combine(s, b))
+
+    def end(s: S) = monad.pure(s)
   }
 
   /** equivalent of the as method for functors, added here for easier type inference */
@@ -244,12 +241,12 @@ trait Fold[M[_], A, B] { self =>
     monadic[M1](s => Monad[M1].pure(s))(ev, m)
 
   def monadic[M1[_]](f: S => M1[S])(implicit ev: M[_] <:< Id[_], m: Monad[M1]) = new Fold[M1, A, B] {
-    type S = M1[self.S]
+    type S = self.S
     implicit val monad: Monad[M1] = m
 
-    def start = monad.pure(f(self.start.asInstanceOf[self.S]))
-    def fold = (s, a) => monad.flatMap(s)(s1 => f(self.fold(s1, a)))
-    def end(s: S) = monad.flatMap(s)(s1 => monad.map(f(s1))(s2 => self.end(s2).asInstanceOf[B]))
+    def start = f(self.start.asInstanceOf[self.S])
+    def fold = (s, a) => f(self.fold(s, a).asInstanceOf[S])
+    def end(s: S) = monad.pure(self.end(s).asInstanceOf[B])
   }
 
 }
@@ -263,8 +260,8 @@ object Fold {
       implicit val monad: Monad[M] = m
 
       type S = (s1.S, s2.S)
-      def start = monad.flatMap(s1.start)(s1s => monad.map(s2.start)(s2s => (s1s, s2s)))
-      def fold = (s: S, a: A) => (s1.fold(s._1, a), s2.fold(s._2, a))
+      def start = monad.tuple2(s1.start, s2.start)
+      def fold = (s: S, a: A) => monad.tuple2(s1.fold(s._1, a), s2.fold(s._2, a))
       def end(s: S) = monad.followedBy(s1.end(s._1))(s2.end(s._2))
     }
   }
@@ -396,7 +393,7 @@ trait FoldCreation {
     implicit val monad = m
 
     def start = action
-    def fold = (s: S, a: A) => s
+    def fold = (s: S, a: A) => monad.pure(s)
     def end(s: S) = monad.pure(s)
   }
 
@@ -405,22 +402,22 @@ trait FoldCreation {
    *         of a failure during folding
    */
   def bracket[M[_], A, C](open: M[C])(step: (C, A) => M[C])(close: C => M[Unit])(implicit m: MonadError[M, Throwable]): Fold[M, A, Unit] = new Fold[M, A, Unit] {
-    type S = M[C]
+    type S = C
     implicit val monad: Monad[M] = m
 
-    def start = monad.pure(open)
-    def fold = (s: S, a: A) => m.handleErrorWith(s.flatMap(c => step(c, a)))(_ => s.flatMap(close) >> s)
-    def end(s: S) = s.flatMap(close)
+    def start = open
+    def fold = (s: S, a: A) => m.handleErrorWith(step(s, a))(_ => close(s).as(s))
+    def end(s: S) = close(s)
   }
 
   /** @return a fold sinking all the values to a unit action */
   def fromSink[M[_], A](action: A => M[Unit])(implicit m: Monad[M]): Fold[M, A, Unit] = new Fold[M, A, Unit] {
-    type S = M[Unit]
+    type S = Unit
     implicit val monad: Monad[M] = m
 
-    def start = monad.pure(monad.pure(()))
-    def fold = (s: S, a: A) => monad.followedBy(s)(action(a))
-    def end(s: S) = monad.as(s, ())
+    def start = monad.pure(())
+    def fold = (s: S, a: A) => action(a)
+    def end(s: S) = monad.pure(())
   }
 }
 
