@@ -240,14 +240,18 @@ trait Fold[M[_], A, B] { self =>
     def end(s: S) = self.end(s).flatMap(b => action.as(b))
   }
 
-  def into[M1[_]](implicit ev: M[_] <:< Id[_], m: Monad[M1]) = new Fold[M1, A, B] {
-    type S = self.S
+  def into[M1[_]](implicit ev: M[_] <:< Id[_], m: Monad[M1]) =
+    monadic[M1](s => Monad[M1].pure(s))(ev, m)
+
+  def monadic[M1[_]](f: S => M1[S])(implicit ev: M[_] <:< Id[_], m: Monad[M1]) = new Fold[M1, A, B] {
+    type S = M1[self.S]
     implicit val monad: Monad[M1] = m
 
-    def start = monad.pure(self.start.asInstanceOf[S])
-    def fold = (s, a) => self.fold(s, a)
-    def end(s: S) = monad.pure(self.end(s).asInstanceOf[B])
+    def start = monad.pure(f(self.start.asInstanceOf[self.S]))
+    def fold = (s, a) => monad.flatMap(s)(s1 => f(self.fold(s1, a)))
+    def end(s: S) = monad.flatMap(s)(s1 => monad.map(f(s1))(s2 => self.end(s2).asInstanceOf[B]))
   }
+
 }
 
 object Fold {
