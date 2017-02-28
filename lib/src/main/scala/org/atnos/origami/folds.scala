@@ -79,6 +79,20 @@ object folds {
     def end(s: S) = s.toList
   }
 
+  /** @return the maximum element */
+  def minimum[A : Ordering]: FoldState[A, Option[A]] = {
+    val ordering = Ordering[A]
+    fromFoldLeft[A, Option[A]](None)((u, a) => u.map(u1 =>
+      ordering.max(a, u1)).orElse(Option(a)))
+  }
+
+  /** @return the minimum element */
+  def maximum[A : Ordering]: FoldState[A, Option[A]] = {
+    val ordering = Ordering[A]
+    fromFoldLeft[A, Option[A]](None)((u, a) => u.map(u1 =>
+      ordering.min(a, u1)).orElse(Option(a)))
+  }
+
   /** @return the number of times an element changes its value */
   def flips[A] = new FoldId[A, Int] {
     private var last: A = null.asInstanceOf[A]
