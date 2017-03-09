@@ -357,6 +357,10 @@ trait FoldCreation {
     def end(s: S) = s
   }
 
+  /** @return a fold which uses a Monoid to accumulate elements */
+  def fromMonoid[A : Monoid] =
+    fromMonoidMap[A, A](identity)
+
   /** @return a fold from arguments of a fold left */
   def fromFoldLeft[A, B](b: B)(f: (B, A) => B) = new FoldId[A, B] {
     type S = B

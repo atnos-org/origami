@@ -155,6 +155,10 @@ object folds {
     }
   }
 
+  /** constant fold returning the same value at the end */
+  def const[A, B](b: => B) =
+    last[A].as(b)
+
   /** lift a function to a fold that applies f to the last element */
   def lift[A, U](f: A => U) =
     last[A] map ((_:Option[A]).map(f))
