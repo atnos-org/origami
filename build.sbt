@@ -16,6 +16,7 @@ lazy val core = project.in(file("core"))
   .settings(moduleSettings("core"))
   .settings(publishSettings)
   .settings(buildSettings)
+  .settings(promulgateVersionSettings)
 
 lazy val lib = project.in(file("lib"))
   .settings(moduleSettings("lib"))
@@ -26,7 +27,7 @@ lazy val lib = project.in(file("lib"))
 def moduleSettings(moduleName: String) = Seq(
   organization := "org.atnos",
   name := "origami-"+moduleName
-) ++ promulgateVersionSettings ++
+) ++
   promulgateBuildInfoSettings ++ Seq(BuildInfoKeys.pkg := "org.atnos.origami."+moduleName) ++
   promulgateSourceSettings
 
@@ -40,7 +41,7 @@ def buildSettings = Seq(
   libraryDependencies ++= si2712Dependency(scalaVersion.value)
 ) ++ warnUnusedImport ++ prompt
 
-lazy val tagName = Def.setting{
+lazy val tagName = Def.setting {
   s"v${if (releaseUseGlobalVersion.value) (version in ThisBuild).value else version.value}"
 }
 
