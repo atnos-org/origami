@@ -336,6 +336,35 @@ object Fold {
     def map[A, B](fa: F[A])(f: A => B): F[B] =
       fa map f
   }
+
+  implicit class numericFold[M[_], A, B : Numeric, S1](x: Fold[M, A, B] { type S = S1 }) {
+    val numeric = implicitly[Numeric[B]]
+    def +(y: Fold[M, A, B]): Fold[M, A, B] = (x zip y).map { case (x1, y1) => numeric.plus(x1, y1) }
+    def -(y: Fold[M, A, B]): Fold[M, A, B] = (x zip y).map{ case (x1, y1) => numeric.minus(x1, y1) }
+    def *(y: Fold[M, A, B]): Fold[M, A, B] = (x zip y).map{ case (x1, y1) => numeric.times(x1, y1) }
+    def unary_-(): Fold[M, A, B] = x.map(numeric.negate)
+  }
+
+  implicit class doubleFold[M[_], A](x: Fold[M, A, Double]) {
+    def +(y: Fold[M, A, Double]): Fold[M, A, Double] = (x zip y).map { case (x1, y1) => x1 + y1 }
+    def -(y: Fold[M, A, Double]): Fold[M, A, Double] = (x zip y).map{ case (x1, y1) => x1 - y1 }
+    def *(y: Fold[M, A, Double]): Fold[M, A, Double] = (x zip y).map{ case (x1, y1) => x1 * y1 }
+    def ^(n: Double): Fold[M, A, Double] = x.map(math.pow(_, n))
+    def /(y: Fold[M, A, Double]): Fold[M, A, Double] = (x zip y).map{ case (x1, y1) =>  x1 / y1 }
+    def /-(y: Fold[M, A, Double]): Fold[M, A, Option[Double]] = (x zip y).map{ case (x1, y1) => if (y1 != 0) Option(x1 / y1) else None }
+    def unary_-(): Fold[M, A, Double] = x.map(- _)
+  }
+
+  implicit class fractionalFold[M[_], A, B : Fractional, S1](x: Fold[M, A, B] { type S = S1 }) {
+    val fractional = implicitly[Fractional[B]]
+    def +(y: Fold[M, A, B]): Fold[M, A, B] = (x zip y).map { case (x1, y1) => fractional.plus(x1, y1) }
+    def -(y: Fold[M, A, B]): Fold[M, A, B] = (x zip y).map{ case (x1, y1) => fractional.minus(x1, y1) }
+    def *(y: Fold[M, A, B]): Fold[M, A, B] = (x zip y).map{ case (x1, y1) => fractional.times(x1, y1) }
+    def /(y: Fold[M, A, B]): Fold[M, A, B] = (x zip y).map{ case (x1, y1) => fractional.div(x1, y1) }
+    def /-(y: Fold[M, A, B]): Fold[M, A, Option[B]] = (x zip y).map{ case (x1, y1) => if (y1 != 0) Option(fractional.div(x1, y1)) else None }
+    def unary_-(): Fold[M, A, B] = x.map(fractional.negate)
+  }
+
 }
 
 /** alias for a non-effectful Fold */

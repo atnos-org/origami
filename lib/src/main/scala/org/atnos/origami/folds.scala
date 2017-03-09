@@ -11,6 +11,12 @@ import org.atnos.origami.fold._
 
 object folds {
 
+  import Fold.fractionalFold
+
+  /** @return the average of all elements */
+  def average[A](implicit f: Fractional[A]): Fold[Id, A, A] =
+    plus[A] / count[A].map(f.fromInt)
+
   /** @return fold to count elements */
   def count[A]: FoldState[A, Int] =
     countOf(_ => true)
