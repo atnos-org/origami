@@ -61,7 +61,6 @@ object FoldSpec extends Properties("Fold") {
     val monadicFold = fold.into[Future]
 
     Await.result(monadicFold.run(list), 1.second) ?= list.foldLeft(0)(_ + _.size)
-
   }
 
   /**
