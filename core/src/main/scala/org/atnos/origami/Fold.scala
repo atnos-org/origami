@@ -251,19 +251,29 @@ trait Fold[M[_], A, B] { self =>
 
 }
 
-object Fold {
+object Fold extends FoldImplicits
 
-  implicit def MonoidSink[M[_], A](implicit m: Monad[M]): Monoid[Fold[M, A, Unit]]= new Monoid[Fold[M, A, Unit]] {
-    def empty = FoldCreation.fromStart(m.pure(()))
+trait FoldImplicits {
 
-    def combine(s1: Fold[M, A, Unit], s2: Fold[M, A, Unit]): Fold[M, A, Unit] = new Fold[M, A, Unit] {
+  implicit def MonoidFold[M[_], A, B](implicit m: Monad[M], monoid: Monoid[B]): Monoid[Fold[M, A, B]]= new Monoid[Fold[M, A, B]] {
+    def empty = FoldCreation.fromStart(m.pure(monoid.empty))
+
+    def combine(s1: Fold[M, A, B], s2: Fold[M, A, B]): Fold[M, A, B] = new Fold[M, A, B] {
       implicit val monad: Monad[M] = m
 
       type S = (s1.S, s2.S)
       def start = monad.tuple2(s1.start, s2.start)
       def fold = (s: S, a: A) => monad.tuple2(s1.fold(s._1, a), s2.fold(s._2, a))
-      def end(s: S) = monad.followedBy(s1.end(s._1))(s2.end(s._2))
+      def end(s: S) = monad.map2(s1.end(s._1), s2.end(s._2))(monoid.combine)
     }
+  }
+
+  implicit def MonoidSink[M[_], A](implicit m: Monad[M]): Monoid[Fold[M, A, Unit]]=
+    MonoidFold[M, A, Unit](m, unitMonoid)
+
+  val unitMonoid: Monoid[Unit] = new Monoid[Unit] {
+    def empty = ()
+    def combine(u1: Unit, u2: Unit): Unit = ()
   }
 
   /**
@@ -371,6 +381,8 @@ object Fold {
 trait FoldId[A, U] extends Fold[Id, A, U] {
   val monad: Monad[Id] = catsInstancesForId
 }
+
+object FoldId extends FoldImplicits
 
 /**
  * Creation methods for folds

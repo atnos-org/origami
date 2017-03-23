@@ -17,6 +17,7 @@ object FoldSpec extends Properties("Fold") {
 
   property("Zip folds") = zip
   property("Compose folds") = compose
+  property("Combine folds") = combine
 
   property("from fold left") = fromFoldLeftProp
   property("from Monoid map") = fromMonoidMapProp
@@ -38,6 +39,12 @@ object FoldSpec extends Properties("Fold") {
 
     // scans is *not* equivalent to a scanLeft because it leaves out the start element
     scans.run(list) == list.scanLeft(fold.start)(fold.fold).drop(1).traverseU(fold.end)
+  }
+
+  def combine = forAll { (list: List[Int], fold1: FoldInt[Int], fold2: FoldInt[Int], fold3: FoldInt[Int]) =>
+    val combined = List[Fold[Id, Int, Int]](fold1, fold2, fold3).combineAll
+
+    combined.run(list) === List(fold1, fold2, fold3).map(_ run list).combineAll
   }
 
   def fromFoldLeftProp = forAll { list: List[String] =>
