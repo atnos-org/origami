@@ -4,7 +4,7 @@ import cats.Id
 
 package object origami {
 
-  object fold extends FoldCreation
+  object fold extends FoldCreation with FoldImplicits
 
   /** alias for a non-effectful Fold where the state type is U */
   type FoldState[A, B] = Fold[Id, A, B] { type S = B }
