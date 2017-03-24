@@ -42,7 +42,7 @@ object FoldSpec extends Properties("Fold") {
   }
 
   def combine = forAll { (list: List[Int], fold1: FoldInt[Int], fold2: FoldInt[Int], fold3: FoldInt[Int]) =>
-    val combined = List[Fold[Id, Int, Int]](fold1, fold2, fold3).combineAll
+    val combined = List(fold1, fold2, fold3).combineAll
 
     combined.run(list) === List(fold1, fold2, fold3).map(_ run list).combineAll
   }
