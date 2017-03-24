@@ -237,16 +237,16 @@ trait Fold[M[_], A, B] { self =>
     def end(s: S) = self.end(s).flatMap(b => action.as(b))
   }
 
-  def into[M1[_]](implicit ev: M[_] <:< Id[_], m: Monad[M1]) =
-    monadic[M1](s => Monad[M1].pure(s))(ev, m)
+  def into[M1[_]](implicit nat: M ~> Id, m: Monad[M1]) =
+    monadic[M1](nat, m)
 
-  def monadic[M1[_]](f: S => M1[S])(implicit ev: M[_] <:< Id[_], m: Monad[M1]) = new Fold[M1, A, B] {
+  def monadic[M1[_]](implicit nat: M ~> Id, m: Monad[M1]) = new Fold[M1, A, B] {
     type S = self.S
     implicit val monad: Monad[M1] = m
 
-    def start = f(self.start.asInstanceOf[self.S])
-    def fold = (s, a) => f(self.fold(s, a).asInstanceOf[S])
-    def end(s: S) = monad.pure(self.end(s).asInstanceOf[B])
+    def start = m.pure(nat(self.start))
+    def fold = (s, a) => m.pure(nat(self.fold(s, a)))
+    def end(s: S) = m.pure(nat(self.end(s)))
   }
 
 }
@@ -254,6 +254,10 @@ trait Fold[M[_], A, B] { self =>
 object Fold extends FoldImplicits
 
 trait FoldImplicits {
+
+  implicit val IdNat: Id ~> Id = new (Id ~> Id) {
+    def apply[X](x: Id[X]) = x
+  }
 
   implicit def MonoidFold[M[_], A, B](implicit m: Monad[M], monoid: Monoid[B]): Monoid[Fold[M, A, B]]= new Monoid[Fold[M, A, B]] {
     def empty = FoldCreation.fromStart(m.pure(monoid.empty))

@@ -10,6 +10,7 @@ import cats.implicits._
 import Arbitraries._
 import scala.concurrent._, duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+import Fold.IdNat
 
 object FoldSpec extends Properties("Fold") {
 
