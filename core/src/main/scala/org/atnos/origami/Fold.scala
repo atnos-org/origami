@@ -382,7 +382,27 @@ trait FoldId[A, U] extends Fold[Id, A, U] {
   val monad: Monad[Id] = catsInstancesForId
 }
 
-object FoldId extends FoldImplicits
+object FoldId extends FoldImplicits {
+
+  implicit def MonoidFoldId[A, B](implicit monoid: Monoid[B]): Monoid[FoldId[A, B]] = {
+    new Monoid[FoldId[A, B]] {
+      def empty = new FoldId[A, B] {
+        type S = B
+        def start = monoid.empty
+        def fold = (s: S, a: A) => s
+        def end(s: S) = s
+      }
+
+      def combine(s1: FoldId[A, B], s2: FoldId[A, B]): FoldId[A, B] = new FoldId[A, B] {
+        type S = (s1.S, s2.S)
+        def start = (s1.start, s2.start)
+        def fold = (s: S, a: A) => (s1.fold(s._1, a), s2.fold(s._2, a))
+        def end(s: S) = monoid.combine(s1.end(s._1), s2.end(s._2))
+      }
+    }
+  }
+
+}
 
 /**
  * Creation methods for folds
