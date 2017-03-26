@@ -17,6 +17,10 @@ object folds {
   def average[A](implicit f: Fractional[A]): Fold[Id, A, A] =
     plus[A] / count[A].map(f.fromInt)
 
+  /** @return the average of all elements */
+  def averageDouble[A](implicit n: Numeric[A]): Fold[Id, A, Double] =
+    fractionalFold[Id, A, Double](plus[A].map(n.toDouble)) / count[A].map(_.toDouble)
+
   /** @return fold to count elements */
   def count[A]: FoldState[A, Int] =
     countOf(_ => true)
@@ -85,19 +89,27 @@ object folds {
     def end(s: S) = s.toList
   }
 
-  /** @return the maximum element */
+  /** @return the minimum element */
   def minimum[A : Ordering]: FoldState[A, Option[A]] = {
     val ordering = Ordering[A]
     fromFoldLeft[A, Option[A]](None)((u, a) => u.map(u1 =>
-      ordering.max(a, u1)).orElse(Option(a)))
+      ordering.min(a, u1)).orElse(Option(a)))
   }
+
+  /** @return the minimum element or a default value */
+  def minimumOr[A : Ordering](default: A): Fold[Id, A, A] =
+    minimum[A].map(_.getOrElse(default))
 
   /** @return the minimum element */
   def maximum[A : Ordering]: FoldState[A, Option[A]] = {
     val ordering = Ordering[A]
     fromFoldLeft[A, Option[A]](None)((u, a) => u.map(u1 =>
-      ordering.min(a, u1)).orElse(Option(a)))
+      ordering.max(a, u1)).orElse(Option(a)))
   }
+
+  /** @return the maximum element or a default value */
+  def maximumOr[A : Ordering](default: A): Fold[Id, A, A] =
+    maximum[A].map(_.getOrElse(default))
 
   /** @return the number of times an element changes its value */
   def flips[A] = new FoldId[A, Int] {

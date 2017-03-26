@@ -369,7 +369,7 @@ trait FoldImplicits {
     def unary_-(): Fold[M, A, Double] = x.map(- _)
   }
 
-  implicit class fractionalFold[M[_], A, B : Fractional, S1](x: Fold[M, A, B] { type S = S1 }) {
+  implicit class fractionalFold[M[_], A, B : Fractional](x: Fold[M, A, B]) {
     val fractional = implicitly[Fractional[B]]
     def +(y: Fold[M, A, B]): Fold[M, A, B] = (x zip y).map { case (x1, y1) => fractional.plus(x1, y1) }
     def -(y: Fold[M, A, B]): Fold[M, A, B] = (x zip y).map{ case (x1, y1) => fractional.minus(x1, y1) }
