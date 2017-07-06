@@ -4,14 +4,10 @@ package origami
 import cats._
 import cats.free._
 import cats.data.State
-import cats.arrow.{Category, Compose}
+import cats.arrow.Compose
 import cats.functor.Profunctor
 import cats.syntax.flatMap._
-import cats.syntax.apply._
-import cats.syntax.cartesian._
-import cats.syntax.foldable._
 import cats.syntax.functor._
-import FoldCreation._
 
 /**
  * A Fold is a "left fold" over a data structure with:
@@ -82,6 +78,16 @@ trait Fold[M[_], A, B] { self =>
 
     def start = self.start
     def fold = (s: S, c: C) => self.fold(s, f(c))
+    def end(s: S) = self.end(s)
+  }
+
+  /** contra flatmap the input values */
+  def contraFlatMap[C](f: C => M[A]) = new Fold[M, C, B] {
+    type S = self.S
+    implicit val monad: Monad[M] = self.monad
+
+    def start = self.start
+    def fold = (s: S, c: C) => f(c).flatMap(c1 => self.fold(s, c1))
     def end(s: S) = self.end(s)
   }
 

@@ -1,9 +1,7 @@
 package org.atnos.origami
 
-import fold._
 import org.scalacheck.Arbitrary._
-import org.scalacheck.{Arbitrary, Gen, Prop}
-import Prop._
+import org.scalacheck.{Arbitrary, Gen}
 import cats._
 import cats.data._
 import cats.implicits._

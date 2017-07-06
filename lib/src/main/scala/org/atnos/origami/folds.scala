@@ -1,7 +1,6 @@
 package org.atnos.origami
 
-import cats._, data._
-import cats.syntax.flatMap._
+import cats._
 import cats.syntax.either._
 import org.atnos.origami.fold._
 
