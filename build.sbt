@@ -1,11 +1,8 @@
 import com.typesafe.sbt.SbtSite.SiteKeys._
 import com.typesafe.sbt.SbtGhPages.GhPagesKeys._
-import ReleaseTransformations._
 import com.ambiata.promulgate.version.VersionPlugin._
 import com.ambiata.promulgate.info.BuildInfoPlugin._
 import com.ambiata.promulgate.source.GenSourcePlugin._
-import Defaults.{defaultTestTasks, testTaskOptions}
-import sbtrelease._
 
 lazy val origami = project.in(file("."))
   .settings(buildSettings)
@@ -32,18 +29,12 @@ def moduleSettings(moduleName: String) = Seq(
   promulgateSourceSettings
 
 def buildSettings = Seq(
-  scalaVersion := "2.12.1",
-  crossScalaVersions := Seq("2.11.8", "2.12.1"),
+  scalaVersion := "2.12.2",
+  crossScalaVersions := Seq("2.11.11", "2.12.2"),
   scalacOptions ++= commonScalacOptions,
   scalacOptions in (Compile, doc) ++= (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
-    si2712,
-  libraryDependencies ++= si2712Dependency(scalaVersion.value)
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
 ) ++ warnUnusedImport ++ prompt
-
-lazy val tagName = Def.setting {
-  s"v${if (releaseUseGlobalVersion.value) (version in ThisBuild).value else version.value}"
-}
 
 lazy val publishSettings =
   Seq(
@@ -61,7 +52,7 @@ lazy val publishSettings =
       </developer>
     </developers>
     )
-) ++ credentialSettings ++ sharedPublishSettings ++ sharedReleaseProcess
+) ++ credentialSettings ++ sharedPublishSettings
 
 lazy val commonScalacOptions = Seq(
   "-deprecation",
@@ -74,13 +65,11 @@ lazy val commonScalacOptions = Seq(
   "-Yno-adapted-args",
   "-Ywarn-numeric-widen",
   "-Ywarn-value-discard",
-  "-Xfuture"
+  "-Xfuture",
+  "-Ypartial-unification"
 )
 
 lazy val sharedPublishSettings = Seq(
-  releaseCrossBuild := true,
-  releaseTagName := tagName.value,
-  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   publishMavenStyle := true,
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
@@ -97,40 +86,9 @@ lazy val userGuideSettings =
     git.remoteRepo := "git@github.com:atnos-org/origami.git"
   )
 
-lazy val sharedReleaseProcess = Seq(
-  releaseProcess := Seq[ReleaseStep](
-    checkSnapshotDependencies
-  , inquireVersions
-  , runTest
-  , setReleaseVersion
-  , commitReleaseVersion
-  , tagRelease
-//  , generateWebsite
-//  , publishSite
-  , publishArtifacts
-  , setNextVersion
-  , commitNextVersion
-  , ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true)
-  , pushChanges
-  )
-) ++
-  Seq(
-    releaseNextVersion := { v => Version(v).map(_.bumpBugfix.string).getOrElse(versionFormatError) },
-    releaseTagName <<= (releaseVersion, version) map  { (rv, v) => "ORIGAMI-" + rv(v) }
-  ) ++
-  testTaskDefinition(generateWebsiteTask, Seq(Tests.Filter(_.endsWith("Website"))))
-
-lazy val publishSite = ReleaseStep { st: State =>
-  val st2 = executeStepTask(makeSite, "Making the site")(st)
-  executeStepTask(pushSite, "Publishing the site")(st2)
-}
-
-lazy val generateWebsiteTask = TaskKey[Tests.Output]("generate-website", "generate the website")
-lazy val generateWebsite     = executeStepTask(generateWebsiteTask, "Generating the website", Test)
-
 lazy val warnUnusedImport = Seq(
   scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
-  scalacOptions in (Test, console) <<= (scalacOptions in (Compile, console))
+  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 )
 
 lazy val credentialSettings = Seq(
@@ -145,45 +103,3 @@ lazy val prompt = shellPrompt in ThisBuild := { state =>
   val name = Project.extract(state).currentRef.project
   (if (name == "origami") "" else name) + "> "
 }
-
-def executeTask(task: TaskKey[_], info: String) = (st: State) => {
-  st.log.info(info)
-  val extracted = Project.extract(st)
-  val ref: ProjectRef = extracted.get(thisProjectRef)
-  extracted.runTask(task in ref, st)._1
-}
-
-def executeStepTask(task: TaskKey[_], info: String, configuration: Configuration) = ReleaseStep { st: State =>
-  executeTask(task, info, configuration)(st)
-}
-
-def executeStepTask(task: TaskKey[_], info: String) = ReleaseStep { st: State =>
-  executeTask(task, info)(st)
-}
-
-def executeTask(task: TaskKey[_], info: String, configuration: Configuration) = (st: State) => {
-  st.log.info(info)
-  Project.extract(st).runTask(task in configuration, st)._1
-}
-
-def testTaskDefinition(task: TaskKey[Tests.Output], options: Seq[TestOption]) =
-  Seq(testTask(task))                          ++
-    inScope(GlobalScope)(defaultTestTasks(task)) ++
-    inConfig(Test)(testTaskOptions(task))        ++
-    (testOptions in (Test, task) ++= options)
-
-def testTask(task: TaskKey[Tests.Output]) =
-  task <<= (streams in Test, loadedTestFrameworks in Test, testLoader in Test,
-    testGrouping in Test in test, testExecution in Test in task,
-    fullClasspath in Test in test, javaHome in test) flatMap Defaults.allTestGroupsTask
-
-lazy val si2712 =
-  scalacOptions ++=
-    (if (CrossVersion.partialVersion(scalaVersion.value).exists(_._2 >= 12)) Seq("-Ypartial-unification")
-    else Seq())
-
-def si2712Dependency(scalaVersion: String) =
-  if (CrossVersion.partialVersion(scalaVersion).exists(_._2 < 12))
-    Seq(compilerPlugin("com.milessabin" % ("si2712fix-plugin_"+scalaVersion) % "1.2.0"))
-  else
-    Seq()
