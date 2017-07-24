@@ -21,6 +21,7 @@ object FoldSpec extends Properties("Fold") {
 
   property("from fold left") = fromFoldLeftProp
   property("from Monoid map") = fromMonoidMapProp
+  property("from Monoid map M") = fromMonoidMapMProp
 
   property("a FoldId can be 'injected' into a monadic fold") = toMonadicFold
 
@@ -59,6 +60,13 @@ object FoldSpec extends Properties("Fold") {
       fromMonoidMap[String, Int](_.size)
 
     fold.run(list) ?= list.foldLeft(0)(_ + _.size)
+  }
+
+  def fromMonoidMapMProp = forAll { list: List[String] =>
+    val fold: Fold[Option, String, Int] =
+      fromMonoidMapM(l => Option(l.size))
+
+    fold.run(list) ?= Some(list.foldLeft(0)(_ + _.size))
   }
 
   def toMonadicFold = forAll { list: List[String] =>

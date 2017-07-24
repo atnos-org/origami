@@ -441,6 +441,17 @@ trait FoldCreation {
     def end(s: S) = s
   }
 
+  /** @return a fold which uses a Monoid to accumulate elements effectfully */
+  def fromMonoidMapM[M[_] : Monad, A, O : Monoid](f: A => M[O]) = new Fold[M, A, O] {
+    val monad = implicitly[Monad[M]]
+
+    type S = O
+
+    def start = monad.pure(Monoid[O].empty)
+    def fold = (s: S, a: A) => f(a).map(fa => Monoid[O].combine(s, fa))
+    def end(s: S) = monad.pure(s)
+  }
+
   /** @return a fold from running a State object */
   def fromStateRun[A, B, C](state: A => State[B, C])(init: B) = new FoldId[A, (B, Option[C])] {
     type S = (B, Option[C])
