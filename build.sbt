@@ -7,7 +7,7 @@ import com.ambiata.promulgate.source.GenSourcePlugin._
 lazy val origami = project.in(file("."))
   .settings(buildSettings)
   .settings(publishSettings)
-  .aggregate(core, lib)
+  .aggregate(core, lib, scalaz)
 
 lazy val core = project.in(file("core"))
   .settings(moduleSettings("core"))
@@ -19,6 +19,13 @@ lazy val lib = project.in(file("lib"))
   .settings(moduleSettings("lib"))
   .settings(buildSettings)
   .settings(publishSettings)
+  .dependsOn(core, core % "test->test")
+
+lazy val scalaz = project.in(file("scalaz"))
+  .settings(moduleSettings("scalaz"))
+  .settings(buildSettings)
+  .settings(publishSettings)
+  .settings(libraryDependencies += "org.scalaz.stream" %% "scalaz-stream" % "0.8.6a")
   .dependsOn(core, core % "test->test")
 
 def moduleSettings(moduleName: String) = Seq(
