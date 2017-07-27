@@ -12,7 +12,7 @@ package object stream { outer =>
     var state: S = null.asInstanceOf[S]
     def getState: S = state
 
-    Process.eval(start) ++
+    Process.eval(start.map { s => state = s; s}) ++
     p.zip(Process.constant(() => getState)).evalMap { case (a, s) =>
       f(s(), a).map { newState =>
         state = newState
