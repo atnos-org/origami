@@ -80,7 +80,8 @@ lazy val sharedPublishSettings = Seq(
   publishMavenStyle := true,
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
-  publishTo := Option("Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
+  publishTo := Option("Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2"),
+  sonatypeProfileName := "org.atnos"
 ) ++ site.settings ++
   ghpages.settings ++
   userGuideSettings
