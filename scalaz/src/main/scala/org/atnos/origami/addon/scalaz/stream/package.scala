@@ -8,7 +8,7 @@ import scalaz.syntax.bind._
 
 package object stream { outer =>
 
-  def scanM[F[_] : Monad : Catchable, S, A](p: Process[F, A])(start: F[S])(f: (S, A) => F[S]): Process[F, S] = {
+  def scanEval[F[_] : Monad : Catchable, S, A](p: Process[F, A])(start: F[S])(f: (S, A) => F[S]): Process[F, S] = {
 
     def go(s: S, p0: Process[F, A]): Process[F, S] =
       for {
@@ -27,11 +27,11 @@ package object stream { outer =>
 
   implicit class ProcessSyntax[F[_] : Monad : Catchable, A](p: Process[F, A]) {
 
-    def scanM[S](start: F[S])(f: (S, A) => F[S]): Process[F, S] =
-      outer.scanM(p)(start)(f)
+    def scanEval[S](start: F[S])(f: (S, A) => F[S]): Process[F, S] =
+      outer.scanEval(p)(start)(f)
 
     def foldWith[B](fold: Fold[F, A, B]): F[B] = {
-      p.scanM(fold.start)(fold.fold).runLast.flatMap {
+      p.scanEval(fold.start)(fold.fold).runLast.flatMap {
         case Some(s) => fold.end(s)
         case None    => fold.start.flatMap(fold.end)
       }
