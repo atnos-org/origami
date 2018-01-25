@@ -5,7 +5,7 @@ enablePlugins(BuildInfoPlugin)
 lazy val origami = project.in(file("."))
   .settings(buildSettings)
   .settings(publishSettings)
-  .aggregate(core, lib, scalaz)
+  .aggregate(core, lib, scalaz, fs2)
 
 lazy val core = project.in(file("core"))
   .settings(moduleSettings("core"))
@@ -23,6 +23,13 @@ lazy val scalaz = project.in(file("scalaz"))
   .settings(buildSettings)
   .settings(publishSettings)
   .settings(libraryDependencies += "org.scalaz.stream" %% "scalaz-stream" % "0.8.6a")
+  .dependsOn(core, core % "test->test")
+
+lazy val fs2 = project.in(file("fs2"))
+  .settings(moduleSettings("fs2"))
+  .settings(buildSettings)
+  .settings(publishSettings)
+  .settings(libraryDependencies += "co.fs2" %% "fs2-core" % "0.10.0-RC2")
   .dependsOn(core, core % "test->test")
 
 def moduleSettings(moduleName: String) = Seq(
