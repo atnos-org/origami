@@ -2,12 +2,11 @@ package org.atnos
 package origami
 
 import cats._
-import cats.free._
 import cats.data.State
-import cats.arrow.Compose
-import cats.functor.Profunctor
+import cats.arrow.{Compose, Profunctor}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.syntax.foldable._
 
 /**
  * A Fold is a "left fold" over a data structure with:
@@ -181,7 +180,7 @@ trait Fold[M[_], A, B] { self =>
    * run a Fold with a Foldable instance
    */
   def run[F[_] : Foldable](foldable: F[A]): M[B] =
-    start.flatMap(s => Free.foldLeftM(foldable, s)(fold).flatMap(end))
+    start.flatMap(s => foldable.foldLeftM(s)(fold).flatMap(end(_)))
   
   /**
    * run over one element
