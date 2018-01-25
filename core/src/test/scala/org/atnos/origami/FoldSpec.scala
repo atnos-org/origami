@@ -39,7 +39,7 @@ object FoldSpec extends Properties("Fold") {
     val scans = fold compose listFold
 
     // scans is *not* equivalent to a scanLeft because it leaves out the start element
-    scans.run(list) == list.scanLeft(fold.start)(fold.fold).drop(1).traverseU(fold.end)
+    scans.run(list) == list.scanLeft(fold.start)(fold.fold).drop(1).traverse(fold.end)
   }
 
   def combine = forAll { (list: List[Int], fold1: FoldInt[Int], fold2: FoldInt[Int], fold3: FoldInt[Int]) =>

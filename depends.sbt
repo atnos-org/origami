@@ -1,5 +1,5 @@
-lazy val catsVersion   = "0.9.0"
-lazy val specs2Version = "3.8.8"
+lazy val catsVersion   = "1.0.1"
+lazy val specs2Version = "4.0.2"
 
 libraryDependencies in Global ++=
   cats ++
@@ -11,7 +11,7 @@ resolvers ++= Seq(
   , Resolver.url("ambiata-oss", new URL("https://ambiata-oss.s3.amazonaws.com"))(Resolver.ivyStylePatterns))
 
 lazy val cats = Seq(
-  "org.typelevel" %% "cats" % catsVersion)
+  "org.typelevel" %% "cats-core" % catsVersion)
 
 lazy val specs2 = Seq(
     "org.specs2" %% "specs2-core"
