@@ -36,11 +36,11 @@ def moduleSettings(moduleName: String) = Seq(
   promulgateSourceSettings
 
 def buildSettings = Seq(
-  scalaVersion := "2.12.2",
-  crossScalaVersions := Seq("2.11.11", "2.12.2"),
+  scalaVersion := "2.12.6",
+  crossScalaVersions := Seq("2.11.12", "2.12.6"),
   scalacOptions ++= commonScalacOptions,
   scalacOptions in (Compile, doc) ++= (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6")
 ) ++ warnUnusedImport ++ prompt
 
 lazy val publishSettings =
