@@ -1,8 +1,6 @@
-import com.typesafe.sbt.SbtSite.SiteKeys._
-import com.typesafe.sbt.SbtGhPages.GhPagesKeys._
-import com.ambiata.promulgate.version.VersionPlugin._
-import com.ambiata.promulgate.info.BuildInfoPlugin._
-import com.ambiata.promulgate.source.GenSourcePlugin._
+enablePlugins(GhpagesPlugin)
+enablePlugins(SitePlugin)
+enablePlugins(BuildInfoPlugin)
 
 lazy val origami = project.in(file("."))
   .settings(buildSettings)
@@ -13,7 +11,6 @@ lazy val core = project.in(file("core"))
   .settings(moduleSettings("core"))
   .settings(publishSettings)
   .settings(buildSettings)
-  .settings(promulgateVersionSettings)
 
 lazy val lib = project.in(file("lib"))
   .settings(moduleSettings("lib"))
@@ -31,9 +28,27 @@ lazy val scalaz = project.in(file("scalaz"))
 def moduleSettings(moduleName: String) = Seq(
   organization := "org.atnos",
   name := "origami-"+moduleName
-) ++
-  promulgateBuildInfoSettings ++ Seq(BuildInfoKeys.pkg := "org.atnos.origami."+moduleName) ++
-  promulgateSourceSettings
+)
+
+lazy val notesSettings = Seq(
+  ghreleaseRepoOrg := "atnos-org",
+  ghreleaseRepoName := "origami",
+  ghreleaseTitle := { tagName: TagName => s"origami ${tagName.replace("ORIGAMI-", "")}" },
+  ghreleaseIsPrerelease := { tagName: TagName => false },
+  ghreleaseNotes := { tagName: TagName =>
+    // find the corresponding release notes
+    val notesFilePath = s"notes/${tagName.replace("ORIGAMI-", "")}.markdown"
+    try scala.io.Source.fromFile(notesFilePath).mkString
+    catch { case t: Throwable => throw new Exception(s"$notesFilePath not found") }
+  },
+  // just upload the notes
+  ghreleaseAssets := Seq()
+)
+
+lazy val buildInfoSettings = Seq(
+  buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+  buildInfoPackage := "org.atnos.origami"
+)
 
 def buildSettings = Seq(
   scalaVersion := "2.12.6",
@@ -82,15 +97,13 @@ lazy val sharedPublishSettings = Seq(
   pomIncludeRepository := Function.const(false),
   publishTo := Option("Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2"),
   sonatypeProfileName := "org.atnos"
-) ++ site.settings ++
-  ghpages.settings ++
-  userGuideSettings
+) ++ userGuideSettings
 
 lazy val userGuideSettings =
   Seq(
-    GhPagesKeys.ghpagesNoJekyll := false,
-    SiteKeys.siteSourceDirectory in SiteKeys.makeSite := target.value / "specs2-reports" / "site",
-    includeFilter in SiteKeys.makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js",
+    ghpagesNoJekyll := false,
+    siteSourceDirectory in makeSite := target.value / "specs2-reports" / "site",
+    includeFilter in makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js",
     git.remoteRepo := "git@github.com:atnos-org/origami.git"
   )
 
