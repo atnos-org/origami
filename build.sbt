@@ -29,8 +29,8 @@ lazy val fs2 = project.in(file("fs2"))
   .settings(moduleSettings("fs2"))
   .settings(buildSettings)
   .settings(publishSettings)
-  .settings(libraryDependencies += "org.typelevel" %% "cats-effect" % "1.0.0")
-  .settings(libraryDependencies += "co.fs2" %% "fs2-core" % "1.0.0")
+  .settings(libraryDependencies += "org.typelevel" %% "cats-effect" % "1.1.0")
+  .settings(libraryDependencies += "co.fs2" %% "fs2-core" % "1.0.2")
   .dependsOn(core, core % "test->test")
 
 def moduleSettings(moduleName: String) = Seq(
@@ -63,7 +63,7 @@ def buildSettings = Seq(
   crossScalaVersions := Seq("2.11.12", "2.12.7"),
   scalacOptions ++= commonScalacOptions,
   scalacOptions in (Compile, doc) ++= (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.8")
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.9")
 ) ++ warnUnusedImport ++ prompt
 
 lazy val publishSettings =
