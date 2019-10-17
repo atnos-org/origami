@@ -63,7 +63,7 @@ def buildSettings = Seq(
   crossScalaVersions := Seq("2.11.12", "2.12.7"),
   scalacOptions ++= commonScalacOptions,
   scalacOptions in (Compile, doc) ++= (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.0")
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
 ) ++ warnUnusedImport ++ prompt
 
 lazy val publishSettings =
