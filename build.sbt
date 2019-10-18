@@ -29,7 +29,7 @@ lazy val fs2 = project.in(file("fs2"))
   .settings(moduleSettings("fs2"))
   .settings(buildSettings)
   .settings(publishSettings)
-  .settings(libraryDependencies += "org.typelevel" %% "cats-effect" % "1.3.0")
+  .settings(libraryDependencies += "org.typelevel" %% "cats-effect" % "1.3.1")
   .settings(libraryDependencies += "co.fs2" %% "fs2-core" % "1.0.5")
   .dependsOn(core, core % "test->test")
 
@@ -59,11 +59,11 @@ lazy val buildInfoSettings = Seq(
 )
 
 def buildSettings = Seq(
-  scalaVersion := "2.12.7",
-  crossScalaVersions := Seq("2.11.12", "2.12.7"),
+  scalaVersion := "2.12.8",
+  crossScalaVersions := Seq("2.11.12", "2.12.8"),
   scalacOptions ++= commonScalacOptions,
   scalacOptions in (Compile, doc) ++= (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.0")
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
 ) ++ warnUnusedImport ++ prompt
 
 lazy val publishSettings =
