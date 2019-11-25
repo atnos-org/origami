@@ -1,16 +1,14 @@
-enablePlugins(GhpagesPlugin)
-enablePlugins(SitePlugin)
-enablePlugins(BuildInfoPlugin)
 
 lazy val origami = project.in(file("."))
+  .enablePlugins(GitBranchPrompt, SitePlugin, GhpagesPlugin)
   .settings(buildSettings)
   .settings(publishSettings)
   .aggregate(core, lib, fs2)
 
 lazy val core = project.in(file("core"))
   .settings(moduleSettings("core"))
-  .settings(publishSettings)
   .settings(buildSettings)
+  .settings(publishSettings)
 
 lazy val lib = project.in(file("lib"))
   .settings(moduleSettings("lib"))
@@ -79,9 +77,8 @@ lazy val sharedPublishSettings = Seq(
   publishMavenStyle := true,
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
-  publishTo := Option("Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2"),
   sonatypeProfileName := "org.atnos",
-//  publishConfiguration := publishConfiguration.value.withOverwrite(true),
+  publishConfiguration := publishConfiguration.value.withOverwrite(true),
   publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true)
 ) ++ Sonatype.projectSettings ++ userGuideSettings
 
