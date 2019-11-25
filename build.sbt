@@ -30,7 +30,7 @@ lazy val fs2 = project.in(file("fs2"))
   .settings(buildSettings)
   .settings(publishSettings)
   .settings(libraryDependencies += "org.typelevel" %% "cats-effect" % "1.4.0")
-  .settings(libraryDependencies += "co.fs2" %% "fs2-core" % "1.0.5")
+  .settings(libraryDependencies += "co.fs2" %% "fs2-core" % "2.1.0")
   .dependsOn(core, core % "test->test")
 
 def moduleSettings(moduleName: String) = Seq(
