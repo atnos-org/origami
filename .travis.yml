@@ -3,8 +3,8 @@ sudo: false
 language: scala
 
 scala:
-  - 2.12.8
-  - 2.11.12
+  - 2.12.10
+  - 2.13.1
 
 jdk:
   - openjdk8
@@ -17,5 +17,3 @@ cache:
 
 script:
   - sbt -scala-version $TRAVIS_SCALA_VERSION ';clean; testOnly -- xonly timefactor 5'
-  - find $HOME/.sbt -name "*.lock" | xargs rm
-  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm

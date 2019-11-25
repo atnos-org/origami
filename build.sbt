@@ -5,7 +5,7 @@ enablePlugins(BuildInfoPlugin)
 lazy val origami = project.in(file("."))
   .settings(buildSettings)
   .settings(publishSettings)
-  .aggregate(core, lib, scalaz, fs2)
+  .aggregate(core, lib, fs2)
 
 lazy val core = project.in(file("core"))
   .settings(moduleSettings("core"))
@@ -18,18 +18,11 @@ lazy val lib = project.in(file("lib"))
   .settings(publishSettings)
   .dependsOn(core, core % "test->test")
 
-lazy val scalaz = project.in(file("scalaz"))
-  .settings(moduleSettings("scalaz"))
-  .settings(buildSettings)
-  .settings(publishSettings)
-  .settings(libraryDependencies += "org.scalaz.stream" %% "scalaz-stream" % "0.8.6a")
-  .dependsOn(core, core % "test->test")
-
 lazy val fs2 = project.in(file("fs2"))
   .settings(moduleSettings("fs2"))
   .settings(buildSettings)
   .settings(publishSettings)
-  .settings(libraryDependencies += "org.typelevel" %% "cats-effect" % "1.4.0")
+  .settings(libraryDependencies += "org.typelevel" %% "cats-effect" % "2.0.0")
   .settings(libraryDependencies += "co.fs2" %% "fs2-core" % "2.1.0")
   .dependsOn(core, core % "test->test")
 
@@ -38,29 +31,14 @@ def moduleSettings(moduleName: String) = Seq(
   name := "origami-"+moduleName
 )
 
-lazy val notesSettings = Seq(
-  ghreleaseRepoOrg := "atnos-org",
-  ghreleaseRepoName := "origami",
-  ghreleaseTitle := { tagName: TagName => s"origami ${tagName.replace("ORIGAMI-", "")}" },
-  ghreleaseIsPrerelease := { tagName: TagName => false },
-  ghreleaseNotes := { tagName: TagName =>
-    // find the corresponding release notes
-    val notesFilePath = s"notes/${tagName.replace("ORIGAMI-", "")}.markdown"
-    try scala.io.Source.fromFile(notesFilePath).mkString
-    catch { case t: Throwable => throw new Exception(s"$notesFilePath not found") }
-  },
-  // just upload the notes
-  ghreleaseAssets := Seq()
-)
-
 lazy val buildInfoSettings = Seq(
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "org.atnos.origami"
 )
 
 def buildSettings = Seq(
-  scalaVersion := "2.12.8",
-  crossScalaVersions := Seq("2.11.12", "2.12.8"),
+  scalaVersion := "2.13.1",
+  crossScalaVersions := Seq("2.11.12", "2.12.10", scalaVersion.value),
   scalacOptions ++= commonScalacOptions,
   scalacOptions in (Compile, doc) ++= (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
@@ -92,20 +70,20 @@ lazy val commonScalacOptions = Seq(
   "-unchecked",
   "-Xfatal-warnings",
   "-Xlint",
-  "-Yno-adapted-args",
   "-Ywarn-numeric-widen",
-  "-Ywarn-value-discard",
-  "-Xfuture",
-  "-Ypartial-unification"
+  "-Ywarn-value-discard"
 )
 
 lazy val sharedPublishSettings = Seq(
+  publishTo := sonatypePublishToBundle.value,
   publishMavenStyle := true,
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
   publishTo := Option("Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2"),
-  sonatypeProfileName := "org.atnos"
-) ++ userGuideSettings
+  sonatypeProfileName := "org.atnos",
+//  publishConfiguration := publishConfiguration.value.withOverwrite(true),
+  publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true)
+) ++ Sonatype.projectSettings ++ userGuideSettings
 
 lazy val userGuideSettings =
   Seq(
