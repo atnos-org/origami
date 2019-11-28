@@ -7,6 +7,7 @@ import cats.arrow.{Compose, Profunctor}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.foldable._
+import Fold._
 
 /**
  * A Fold is a "left fold" over a data structure with:
@@ -79,6 +80,30 @@ trait Fold[M[_], A, B] { self =>
     def fold = (s: S, c: C) => self.fold(s, f(c))
     def end(s: S) = self.end(s)
   }
+
+  /** filter the input values */
+  def preFilter(f: A => Boolean) = preCollect[A] { case a if f(a) => a }
+
+  /** combine [[contramap]] and [[preFilter]] */
+  def contramapFilter[C](f: C => Option[A]) = preCollect(Function.unlift(f))
+
+  /** similar to [[contramapFilter]], but use a partial function */
+  def preCollect[C](pf: PartialFunction[C, A]) = new Fold[M, C, B] {
+     type S = self.S
+     val monad: Monad[M] = self.monad
+
+     def start = self.start
+     def fold = (s: S, c: C) => {
+       // trick from TraversableOnce, used to avoid calling both isDefined and apply (or calling lift)
+       val x = pf.applyOrElse(c, sentinel)
+       if (x.asInstanceOf[AnyRef] ne sentinel) self.fold(s, x.asInstanceOf[A])
+       else monad.pure(s)
+     }
+     def end(s: S) = self.end(s)
+   }
+
+  /** fold only the non empty values */
+  def flattenOption = contramapFilter[Option[A]](identity)
 
   /** contra flatmap the input values */
   def contraFlatMap[C](f: C => M[A]) = new Fold[M, C, B] {
@@ -256,7 +281,9 @@ trait Fold[M[_], A, B] { self =>
 
 }
 
-object Fold extends FoldImplicits
+object Fold extends FoldImplicits {
+  private val sentinel: Function1[Any, Any] = new scala.runtime.AbstractFunction1[Any, Any] { def apply(a: Any) = this }
+}
 
 trait FoldImplicits {
 
