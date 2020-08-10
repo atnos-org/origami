@@ -7,7 +7,7 @@ package object origami {
   object fold extends FoldCreation with FoldImplicits
 
   /** alias for a non-effectful Fold where the state type is U */
-  type FoldState[A, B] = Fold[Id, A, B] { type S = B }
+  type FoldState[A, B] = Fold[Id, A, B]
 
   /** alias for a Fold sinking its last value */
   type Sink[M[_], A] = Fold[M, A, Unit]

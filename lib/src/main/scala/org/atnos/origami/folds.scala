@@ -46,15 +46,16 @@ object folds {
   }
 
   /** @return return false if the list is empty or if all elements are false, use a Either state to indicate early success */
-  def any[A](f: A => Boolean) = new FoldId[A, Boolean] {
+  def any[A](f: A => Boolean): FoldId[A, Boolean] = new FoldId[A, Boolean] {
     type S = Boolean Either Boolean
 
     def start = Either.left(false)
     def fold = (s: S, a: A) => if (f(a)) Either.right(true) else s
     def end(s: S) = s.fold(b => b, b => b)
   }
+
   /** @return return true if the list is empty or if all elements are true, use a Either state to indicate early failure */
-  def all[A](f: A => Boolean) = new FoldId[A, Boolean] {
+  def all[A](f: A => Boolean): FoldId[A, Boolean] = new FoldId[A, Boolean] {
     type S = Boolean Either Boolean
 
     def start = Either.left(true)
@@ -80,7 +81,7 @@ object folds {
   }
 
   /** @return the last n elements */
-  def lastN[A](n: Int) = new FoldId[A, List[A]] {
+  def lastN[A](n: Int): FoldId[A, List[A]] = new FoldId[A, List[A]] {
     type S = scala.collection.mutable.ListBuffer[A]
 
     def start = new scala.collection.mutable.ListBuffer[A]
@@ -111,7 +112,7 @@ object folds {
     maximum[A].map(_.getOrElse(default))
 
   /** @return the number of times an element changes its value */
-  def flips[A] = new FoldId[A, Int] {
+  def flips[A]: FoldId[A, Int] = new FoldId[A, Int] {
     private var last: A = null.asInstanceOf[A]
     type S = Int
 
@@ -124,7 +125,7 @@ object folds {
   }
 
   /** @return the number of times an element changes its value */
-  def flipsLong[A] = new FoldId[A, Long] {
+  def flipsLong[A]: FoldId[A, Long] = new FoldId[A, Long] {
     private var last: A = null.asInstanceOf[A]
     type S = Long
 
@@ -173,11 +174,11 @@ object folds {
   }
 
   /** constant fold returning the same value at the end */
-  def const[A, B](b: => B) =
+  def const[A, B](b: =>B): FoldState[A, B] =
     last[A].as(b)
 
   /** lift a function to a fold that applies f to the last element */
-  def lift[A, U](f: A => U) =
+  def lift[A, U](f: A => U): FoldState[A, Option[U]] =
     last[A] map ((_:Option[A]).map(f))
 
   /** @return a plus fold from a Num */
@@ -185,7 +186,7 @@ object folds {
     fromFoldLeft(implicitly[Numeric[N]].zero)(implicitly[Numeric[N]].plus)
 
   /** @return a plus fold from a mapping to a Num */
-  def plusBy[A, N : Numeric](f: A => N): Fold[Id, A, N] { type S = N } =
+  def plusBy[A, N : Numeric](f: A => N): Fold[Id, A, N] =
     plus[N].contramap[A](f)
 
   /** @return a times fold from a Num */
@@ -193,11 +194,11 @@ object folds {
     fromFoldLeft(implicitly[Numeric[N]].zero)(implicitly[Numeric[N]].times)
 
   /** @return a times fold from a mapping to a Num */
-  def timesBy[A, N : Numeric](f: A => N): Fold[Id, A, N] { type S = N } =
+  def timesBy[A, N : Numeric](f: A => N): Fold[Id, A, N] =
     times[N].contramap(f)
 
   /** @return the mean of elements */
-  def mean[N : Fractional]: Fold[Id, N, N] { type S = (N, Int) } =
+  def mean[N : Fractional]: Fold[Id, N, N]  =
     plus.zip(count).map { case (s, c) =>
       val frac = implicitly[Fractional[N]]; import frac._
 
@@ -256,23 +257,23 @@ object folds {
   }
 
   /** a fold where the current state is a random Int */
-  def randomInt[A] =
+  def randomInt[A]: FoldId[A, Option[Int]] =
     randomWithGeneratorAndFunction[A, Int](new util.Random, (_:util.Random).nextInt)
 
   /** a fold where the current state is a random Int */
-  def randomIntWithSeed[A](seed: Long) =
+  def randomIntWithSeed[A](seed: Long): FoldId[A, Option[Int]] =
     randomWithGeneratorAndFunction[A, Int](new util.Random(seed), (_:util.Random).nextInt)
 
   /** a fold where the current state is a random Double */
-  def randomDouble[A] =
+  def randomDouble[A]: FoldId[A, Option[Double]] =
     randomWithGeneratorAndFunction[A, Double](new util.Random, (_:util.Random).nextDouble)
 
   /** a fold where the current state is a random Double */
-  def randomDoubleWithSeed[A](seed: Long) =
+  def randomDoubleWithSeed[A](seed: Long): FoldId[A, Option[Double]] =
     randomWithGeneratorAndFunction[A, Double](new util.Random(seed), (_:util.Random).nextDouble)
 
   /** create a fold for a mutable Random object */
-  def randomWithGeneratorAndFunction[A, R](random: util.Random, f: util.Random => R) = new FoldId[A, Option[R]] {
+  def randomWithGeneratorAndFunction[A, R](random: util.Random, f: util.Random => R): FoldId[A, Option[R]] = new FoldId[A, Option[R]] {
     type S = (util.Random, Option[R])
 
     def start = (random, None)
@@ -284,7 +285,7 @@ object folds {
    * return an arbitrary streamed element so that each element has the same probability
    * be chosen
    */
-  def reservoirSampling[A] = new FoldId[A, Option[A]] {
+  def reservoirSampling[A]: FoldId[A, Option[A]] = new FoldId[A, Option[A]] {
     type S = (scala.util.Random, Int, Option[A])
 
     def start = (new scala.util.Random, 0, None)
@@ -315,14 +316,13 @@ object folds {
     def end(s: S) = s.toList
   }
 
-  private val IntAdditiveMonoid = new Monoid[Int] {
+  private val IntAdditiveMonoid: Monoid[Int] = new Monoid[Int] {
     def empty = 0
     def combine(a: Int, b: Int) = a + b
   }
 
-  private val LongAdditiveMonoid = new Monoid[Long] {
+  private val LongAdditiveMonoid: Monoid[Long] = new Monoid[Long] {
     def empty = 0L
     def combine(a: Long, b: Long) = a + b
   }
 }
-
