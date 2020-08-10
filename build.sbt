@@ -44,6 +44,10 @@ def buildSettings = Seq(
 
 lazy val publishSettings =
   Seq(
+  publishTo in Global := sonatypePublishToBundle.value,
+  sonatypeProfileName := "org.atnos",
+  publishMavenStyle := true,
+  publishArtifact in Test := false,
   homepage := Some(url("https://github.com/atnos-org/origami")),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
   scmInfo := Some(ScmInfo(url("https://github.com/atnos-org/origami"), "scm:git:git@github.com:atnos-org/origami.git")),
@@ -58,7 +62,7 @@ lazy val publishSettings =
       </developer>
     </developers>
     )
-) ++ credentialSettings ++ sharedPublishSettings
+) ++ credentialSettings ++ sharedPublishSettings ++ Sonatype.projectSettings
 
 lazy val commonScalacOptions = Seq(
   "-deprecation",
