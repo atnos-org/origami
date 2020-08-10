@@ -72,7 +72,7 @@ object folds {
     fromFoldLeft[A, Option[A]](None)((u, a) => Option(a))
 
   /** @return the first n elements */
-  def firstN[A](n: Int) = new FoldId[A, List[A]] {
+  def firstN[A](n: Int): FoldId[A, List[A]] = new FoldId[A, List[A]] {
     type S = scala.collection.mutable.ListBuffer[A]
 
     def start = new scala.collection.mutable.ListBuffer[A]
