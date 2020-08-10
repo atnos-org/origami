@@ -11,6 +11,7 @@ object FoldsSpec extends Properties("Folds") {
   property("count") = countFold
   property("countOf") = countOfFold
   property("count unique") = countUniqueFold
+  property("unique") = uniqueFold
 
   property("any") = anyFold
   property("all") = allFold
@@ -51,6 +52,10 @@ object FoldsSpec extends Properties("Folds") {
 
   def countUniqueFold = forAll { list: List[Int] =>
     countUnique[Int].run(list) ?= list.distinct.size
+  }
+
+  def uniqueFold = forAll { list: List[Int] =>
+    unique[Int].run(list) ?= list.toSet
   }
 
   def anyFold = forAll { list: List[Boolean] =>

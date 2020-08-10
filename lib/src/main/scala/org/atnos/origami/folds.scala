@@ -41,8 +41,17 @@ object folds {
     type S = scala.collection.mutable.HashSet[A]
 
     def start = new scala.collection.mutable.HashSet[A]
-    def fold = (s: S, a: A) => { s.add(a); s }
+    def fold = (s: S, a: A) => s += a
     def end(s: S) = s.size
+  }
+
+  /** @return fold which accumulates elements into a Set */
+  def unique[A]: FoldId[A, Set[A]] = new FoldId[A, Set[A]] {
+    type S = scala.collection.mutable.HashSet[A]
+
+    def start     = new scala.collection.mutable.HashSet[A]
+    def fold      = (s: S, a: A) => s += a
+    def end(s: S) = s.toSet
   }
 
   /** @return return false if the list is empty or if all elements are false, use a Either state to indicate early success */
