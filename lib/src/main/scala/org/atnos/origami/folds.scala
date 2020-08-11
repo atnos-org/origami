@@ -41,8 +41,17 @@ object folds {
     type S = scala.collection.mutable.HashSet[A]
 
     def start = new scala.collection.mutable.HashSet[A]
-    def fold = (s: S, a: A) => { s.add(a); s }
+    def fold = (s: S, a: A) => s += a
     def end(s: S) = s.size
+  }
+
+  /** @return fold which accumulates elements into a Set */
+  def unique[A]: FoldId[A, Set[A]] = new FoldId[A, Set[A]] {
+    type S = scala.collection.mutable.HashSet[A]
+
+    def start     = new scala.collection.mutable.HashSet[A]
+    def fold      = (s: S, a: A) => s += a
+    def end(s: S) = s.toSet
   }
 
   /** @return return false if the list is empty or if all elements are false, use a Either state to indicate early success */
@@ -72,7 +81,7 @@ object folds {
     fromFoldLeft[A, Option[A]](None)((u, a) => Option(a))
 
   /** @return the first n elements */
-  def firstN[A](n: Int) = new FoldId[A, List[A]] {
+  def firstN[A](n: Int): FoldId[A, List[A]] = new FoldId[A, List[A]] {
     type S = scala.collection.mutable.ListBuffer[A]
 
     def start = new scala.collection.mutable.ListBuffer[A]
