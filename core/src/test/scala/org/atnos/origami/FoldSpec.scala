@@ -6,7 +6,7 @@ import org.scalacheck.Prop._
 import org.scalacheck._
 import fold._
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import Arbitraries._
 import scala.concurrent._, duration._
 import scala.concurrent.ExecutionContext.Implicits.global

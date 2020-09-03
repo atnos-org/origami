@@ -1,7 +1,7 @@
 package org.atnos.origami.syntax
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import org.atnos.origami._
 
 trait FoldableFoldSyntax {
