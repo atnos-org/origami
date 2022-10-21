@@ -21,7 +21,7 @@ lazy val fs2 = project.in(file("fs2"))
   .settings(buildSettings)
   .settings(publishSettings)
   .settings(libraryDependencies += "org.typelevel" %% "cats-effect" % "2.1.4")
-  .settings(libraryDependencies += "co.fs2" %% "fs2-core" % "2.4.4")
+  .settings(libraryDependencies += "co.fs2" %% "fs2-core" % "2.4.6")
   .dependsOn(core, core % "test->test")
 
 def moduleSettings(moduleName: String) = Seq(
@@ -38,16 +38,16 @@ def buildSettings = Seq(
   scalaVersion := "2.13.2",
   crossScalaVersions := Seq("2.12.11", scalaVersion.value),
   scalacOptions ++= commonScalacOptions,
-  scalacOptions in (Compile, doc) ++= (scalacOptions in (Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
+  (Compile / doc / scalacOptions) ++= ((Compile / doc / scalacOptions)).value.filter(_ != "-Xfatal-warnings"),
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
 ) ++ warnUnusedImport ++ prompt
 
 lazy val publishSettings =
   Seq(
-  publishTo in Global := sonatypePublishToBundle.value,
+  (Global / publishTo) := sonatypePublishToBundle.value,
   sonatypeProfileName := "org.atnos",
   publishMavenStyle := true,
-  publishArtifact in Test := false,
+  (Test / publishArtifact) := false,
   homepage := Some(url("https://github.com/atnos-org/origami")),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
   scmInfo := Some(ScmInfo(url("https://github.com/atnos-org/origami"), "scm:git:git@github.com:atnos-org/origami.git")),
@@ -79,7 +79,7 @@ lazy val commonScalacOptions = Seq(
 lazy val sharedPublishSettings = Seq(
   publishTo := sonatypePublishToBundle.value,
   publishMavenStyle := true,
-  publishArtifact in Test := false,
+  (Test / publishArtifact) := false,
   pomIncludeRepository := Function.const(false),
   sonatypeProfileName := "org.atnos",
   publishConfiguration := publishConfiguration.value.withOverwrite(true),
@@ -89,14 +89,14 @@ lazy val sharedPublishSettings = Seq(
 lazy val userGuideSettings =
   Seq(
     ghpagesNoJekyll := false,
-    siteSourceDirectory in makeSite := target.value / "specs2-reports" / "site",
-    includeFilter in makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js",
+    (makeSite / siteSourceDirectory) := target.value / "specs2-reports" / "site",
+    (makeSite / includeFilter) := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js",
     git.remoteRepo := "git@github.com:atnos-org/origami.git"
   )
 
 lazy val warnUnusedImport = Seq(
-  scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
-  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
+  (Compile / console / scalacOptions) ~= {_.filterNot("-Ywarn-unused-import" == _)},
+  (Test / console / scalacOptions) := ((Compile / console / scalacOptions)).value
 )
 
 lazy val credentialSettings = Seq(
@@ -107,7 +107,7 @@ lazy val credentialSettings = Seq(
   } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
 )
 
-lazy val prompt = shellPrompt in ThisBuild := { state =>
+lazy val prompt = (ThisBuild / shellPrompt) := { state =>
   val name = Project.extract(state).currentRef.project
   (if (name == "origami") "" else name) + "> "
 }
