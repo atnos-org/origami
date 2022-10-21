@@ -36,7 +36,7 @@ lazy val buildInfoSettings = Seq(
 
 def buildSettings = Seq(
   scalaVersion := "2.13.2",
-  crossScalaVersions := Seq("2.12.11", scalaVersion.value),
+  crossScalaVersions := Seq("2.12.17", scalaVersion.value),
   scalacOptions ++= commonScalacOptions,
   (Compile / doc / scalacOptions) ++= ((Compile / doc / scalacOptions)).value.filter(_ != "-Xfatal-warnings"),
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
